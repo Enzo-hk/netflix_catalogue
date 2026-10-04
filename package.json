@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preprocess": "node scripts/preprocess.js",
+    "predev": "node scripts/preprocess.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

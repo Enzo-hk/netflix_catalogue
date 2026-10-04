@@ -72,6 +72,19 @@ netflix_catalogue/
 └── README.md
 ```
 
+## Data preprocessing
+
+`npm run dev` first runs `scripts/preprocess.js` automatically (you can also run it alone with `npm run preprocess`).
+It turns the raw Kaggle CSV files of `public/data/raw/` into one clean data table, `public/data/preprocessed/titles.json` (1 row per title), loaded in the app with `loadNetflixData()` from `src/data/loadData.js`.
+
+1. **Clean**: fix the 3 titles whose duration is in the rating column, parse dates and durations (minutes / seasons)
+2. **Join**: add `imdb_score`, `imdb_votes` (Netflix IMDb Scores) and `budget`, `revenue` (IMDb Movies, movies only) using the normalised title + type + release year (±1). Unmatched titles are kept with `null` values. Budgets and revenues with decimals are imputed values in the source and are set to `null`.
+3. **Derive**: `main_country`, `production_country_count`, `cast_size`
+4. **Pre-classify**: 14 ratings → `age_group` (Kids, Older Kids, Teens, Adults, Unrated); 42 Netflix tags → 21 `genre_families`; region tags → `is_international`
+
+Join match rates and category counts are written to `public/data/preprocessed/summary.json`.
+Filtering and aggregation are done in the browser (e.g. `d3.rollup`) so that every view reacts to the shared filters.
+
 ## Production build (not really useful for now)
 
 To create a production build:
