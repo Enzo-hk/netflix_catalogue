@@ -58,7 +58,10 @@ The page will automatically reload when you modify the source code.
 
 ```text
 netflix_catalogue/
-├── public/             # Static files and data from kaggle
+├── public/
+|   └── data/               # Static data files 
+|       ├── raw/            # raw csv data from kaggle
+|       └── preprocessed/   # preprocessed json data (local folder, added in .gitignore)
 ├── src/                # Application source code
 │   ├── components/     # Reusable UI components
 │   ├── data/           # Data loading and processing
