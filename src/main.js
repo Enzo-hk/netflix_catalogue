@@ -4,6 +4,7 @@
 import { loadNetflixData } from "./data/loadData.js";
 import { createBeeswarm } from "./visualizations/beeswarm.js";
 import { createStackedAreaChart } from "./visualizations/stacked-area-chart.js";
+import { createChoropleth } from "./visualizations/choropleth.js";
 
 async function main() {
     const data = await loadNetflixData();
@@ -11,14 +12,17 @@ async function main() {
     console.log("Data loaded:", data);
     createBeeswarm(data);
     createStackedAreaChart("#stacked-area-chart", data);
+    createChoropleth(data);
 }
 
 function setupVisualizationToggles() {
     const beeswarmCheckbox = document.getElementById("toggle-beeswarm");
     const stackedCheckbox = document.getElementById("toggle-stacked");
-
+    const choroplethCheckbox = document.getElementById("toggle-choropleth");
+    
     const beeswarmSection = document.getElementById("section-beeswarm");
     const stackedSection = document.getElementById("section-stacked");
+    const choroplethSection = document.getElementById("section-choropleth");
 
     beeswarmCheckbox.addEventListener("change", (e) => {
         beeswarmSection.classList.toggle("is-hidden", !e.target.checked);
@@ -26,6 +30,10 @@ function setupVisualizationToggles() {
 
     stackedCheckbox.addEventListener("change", (e) => {
         stackedSection.classList.toggle("is-hidden", !e.target.checked);
+    });
+
+    choroplethCheckbox.addEventListener("change", (e) => {
+        choroplethSection.classList.toggle("is-hidden", !e.target.checked);
     });
 }
 
