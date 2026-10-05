@@ -26,7 +26,7 @@ export function createChoropleth(data) {
 
     // Load external data and boot
     Promise.all([
-        d3.json("public/data/preprocessed/world_countries.geojson")
+        d3.json("public/data/raw/world_countries.geojson")
         ]).then(function (loadData) {
             let topo = loadData[0];
             console.log("GeoJSON loaded with", topo.features.length, "features");
