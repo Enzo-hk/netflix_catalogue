@@ -34,6 +34,11 @@
       <input type="checkbox" id="toggle-choropleth" checked>
       Choropleth
     </label>
+    <label class="toggle-label">
+      <input type="checkbox" id="toggle-parallel" checked>
+      Parallel Coordinates
+    </label>
+
     </div>
 
     <!-- Visualization Sections -->
@@ -55,6 +60,12 @@
 
       <div class="chart-container">
         <svg id="choropleth" width="1000" height="700"></svg>
+      </div>
+    </section>
+     <section class="visualization" id="section-parallel">
+      <h2>Parallel Coordinates</h2>
+      <div class="chart-container">
+        <svg id="parallel-coordinates"></svg>
       </div>
     </section>
 
