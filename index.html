@@ -1,14 +1,18 @@
 <!doctype html>
 <html lang="en">
 
+
 <head>
   <meta charset="UTF-8" />
+  <!-- Load d3.js -->
+  <script src="https://d3js.org/d3.v6.js"></script>
+
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Netflix Visualization</title>
 
   <!-- style sheet -->
-  <link rel="stylesheet" type="text/css" href="styles/style.css">
+<link rel="stylesheet" href="/src/styles/style.css">
   <!-- you can add other stylesheets here if you want -->
 </head>
 
@@ -16,16 +20,54 @@
   <div id="app">
 
     <h1>Our amazing project!</h1>
+    <!-- Label Toggles -->
+    <div class="controls-container">
+    <label class="toggle-label">
+      <input type="checkbox" id="toggle-beeswarm" checked>
+      Beeswarm
+    </label>
+    <label class="toggle-label">
+      <input type="checkbox" id="toggle-stacked" checked>
+      Stacked Area Chart
+    </label>
+    <label class="toggle-label">
+      <input type="checkbox" id="toggle-choropleth" checked>
+      Choropleth
+    </label>
+    <label class="toggle-label">
+      <input type="checkbox" id="toggle-parallel" checked>
+      Parallel Coordinates
+    </label>
 
-    <!-- Example -->
-    <section class="visualization">
+    </div>
+
+    <!-- Visualization Sections -->
+    <section class="visualization" id="section-beeswarm">
       <h2>Beeswarm</h2>
 
       <div class="chart-container">
         <svg id="beeswarm"></svg>
       </div>
     </section>
-    <!-- End of example -->
+    <section class="visualization" id="section-stacked">
+      <h2>Stacked Area Chart</h2>
+      <div class="chart-container">
+        <svg id="stacked-area-chart"></svg>
+      </div>
+    </section>
+    <section class="visualization" id="section-choropleth">
+      <h2>Choropleth</h2>
+
+      <div class="chart-container">
+        <svg id="choropleth" width="1000" height="700"></svg>
+      </div>
+    </section>
+     <section class="visualization" id="section-parallel">
+      <h2>Parallel Coordinates</h2>
+      <div class="chart-container">
+        <svg id="parallel-coordinates"></svg>
+      </div>
+    </section>
 
 
   </div>
