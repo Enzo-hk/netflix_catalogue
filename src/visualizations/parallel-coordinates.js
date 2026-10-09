@@ -5,13 +5,15 @@ import * as d3 from "d3";
 // Lines are drawn on a canvas (fast), axes and filters in SVG
 
 // Axes from left to right (log = true for columns with a few huge values)
+// zeroIsMissing: 0 means "unknown" in the data, not a real 0
 const AXES = [
     { key: "imdb_score",       label: "IMDb score",     log: false },
     { key: "imdb_votes",       label: "IMDb votes",     log: true  },
     { key: "budget",           label: "Budget ($)",     log: true  },
     { key: "revenue",          label: "Revenue ($)",    log: true  },
     { key: "duration_minutes", label: "Duration (min)", log: false },
-    { key: "cast_size",        label: "Cast size",      log: false },
+    { key: "cast_size",        label: "Cast size",      log: false, zeroIsMissing: true },
+    { key: "production_country_count", label: "Countries", log: false, zeroIsMissing: true },
 ];
 
 // Films in Netflix red, series in teal (colour-blind safe pair)
@@ -34,6 +36,13 @@ function getValue(row, key) {
     if (raw === null || raw === undefined || raw === "") return null;
     const number = +raw;
     return Number.isFinite(number) ? number : null;
+}
+
+// Value of a title on one axis, 0 counts as missing when the axis says so
+function axisValue(row, axis) {
+    const value = getValue(row, axis.key);
+    if (axis.zeroIsMissing && value === 0) return null;
+    return value;
 }
 
 // Ticks 1, 10, 100... inside [min, max], for log axes
@@ -91,7 +100,7 @@ export function createParallelCoordinates(svgSelector, data) {
 
     AXES.forEach(axis => {
         const values = rows
-            .map(d => getValue(d, axis.key))
+            .map(d => axisValue(d, axis))
             .filter(v => v !== null);
 
         if (values.length === 0) {
@@ -108,7 +117,7 @@ export function createParallelCoordinates(svgSelector, data) {
 
     // Height of a title on an axis, or the "no data" strip
     function yPosition(d, axis) {
-        const value = getValue(d, axis.key);
+        const value = axisValue(d, axis);
         return value === null ? noDataY : y[axis.key](value);
     }
 
@@ -404,7 +413,8 @@ export function createParallelCoordinates(svgSelector, data) {
             `Budget: ${formatMoney(d.budget)}`,
             `Revenue: ${formatMoney(d.revenue)}`,
             `Duration: ${d.duration_minutes === null ? "no data" : Math.round(d.duration_minutes) + " min"}`,
-            `Cast size: ${d.cast_size}`,
+            `Cast size: ${d.cast_size || "no data"}`,
+            `Countries: ${d.production_country_count || "no data"}`,
         ];
 
         // One line of text per entry, title in bold
