@@ -476,13 +476,16 @@ export function createParallelCoordinates(svgSelector, data) {
         .style("font-weight", "bold")
         .style("fill", "#E50914")
         .style("cursor", "pointer")
-        .text("Reset filters")
+        .text("Reset all filters")
         .on("click", () => {
             // Removing each box clears its filter
             brushGroups.each(function () {
                 d3.select(this).call(brush.move, null);
             });
-        });
+        })
+        // Underline on mouse over, like a link
+        .on("pointerenter", () => resetButton.style("text-decoration", "underline"))
+        .on("pointerleave", () => resetButton.style("text-decoration", "none"));
 
     const emptyMessage = g.append("text")
         .attr("x", width / 2)
