@@ -202,12 +202,13 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("transform", axis => `translate(${x(axis.key)},0)`);
 
     axisGroups.each(function (axis) {
-        const axisGenerator = d3.axisLeft(y[axis.key]);
+        const axisGenerator = d3.axisLeft(y[axis.key])
+            .tickSizeOuter(0);  // no extra tick at the ends
 
         if (axis.log) {
             axisGenerator
                 .tickValues(powersOfTen(y[axis.key].domain()))
-                .tickFormat(d3.format("~s"));
+                .tickFormat(formatNumber);
         } else {
             axisGenerator.ticks(5);
         }
@@ -236,9 +237,9 @@ export function createParallelCoordinates(svgSelector, data) {
 
     // "no data" label
     axisGroups.append("text")
-        .attr("y", noDataY + 4)
+        .attr("y", noDataY + 16)
         .attr("x", -6)
-        .attr("text-anchor", "end")
+        .attr("text-anchor", "middle")
         .style("font-size", "9px")
         .style("fill", "#999")
         .text("no data");
@@ -258,7 +259,6 @@ export function createParallelCoordinates(svgSelector, data) {
             } else {
                 selections.delete(i);
             }
-            updateRangeLabels(i, event.selection);
             scheduleDraw();
         });
 
@@ -272,12 +272,6 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("fill-opacity", 0.08)
         .attr("stroke", HOVER_COLOR)
         .attr("stroke-width", 1.5)
-        .attr("rx", 3);
-
-    // Resize grips on the top and bottom edges
-    brushGroups.selectAll(".handle")
-        .attr("fill", HOVER_COLOR)
-        .attr("fill-opacity", 0.5)
         .attr("rx", 3);
 
     // Darker band on mouse over
@@ -467,7 +461,7 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("y", -52)
         .style("font-size", "11px")
         .style("fill", "#666")
-        .text("Drag on an axis to filter. Drag the box to move it, or its edges to resize. Click outside a box to remove it.");
+        .text("Drag on an axis to filter. Drag the box to move it, or its edges to resize.");
 
     const counter = g.append("text")
         .attr("y", height + 28)
