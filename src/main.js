@@ -6,6 +6,7 @@ import { createBeeswarm } from "./visualizations/beeswarm.js";
 import { createStackedAreaChart } from "./visualizations/stacked-area-chart.js";
 import { createChoropleth } from "./visualizations/choropleth.js";
 import { createParallelCoordinates } from "./visualizations/parallel-coordinates.js";
+import { createSunburst } from "./visualizations/sunburst.js";
 
 async function main() {
     const data = await loadNetflixData();
@@ -15,6 +16,7 @@ async function main() {
     createStackedAreaChart("#stacked-area-chart", data);
     createChoropleth(data);
     createParallelCoordinates("#parallel-coordinates", data);
+    createSunburst("#sunburst", data);
 }
 
 function setupVisualizationToggles() {
@@ -22,11 +24,13 @@ function setupVisualizationToggles() {
     const stackedCheckbox = document.getElementById("toggle-stacked");
     const choroplethCheckbox = document.getElementById("toggle-choropleth");
     const parallelCheckbox = document.getElementById("toggle-parallel");
-    
+    const sunburstCheckbox = document.getElementById("toggle-sunburst");
+
     const beeswarmSection = document.getElementById("section-beeswarm");
     const stackedSection = document.getElementById("section-stacked");
     const choroplethSection = document.getElementById("section-choropleth");
     const parallelSection = document.getElementById("section-parallel");
+    const sunburstSection = document.getElementById("section-sunburst");
 
     beeswarmCheckbox.addEventListener("change", (e) => {
         beeswarmSection.classList.toggle("is-hidden", !e.target.checked);
@@ -42,6 +46,10 @@ function setupVisualizationToggles() {
 
      parallelCheckbox.addEventListener("change", (e) => {
         parallelSection.classList.toggle("is-hidden", !e.target.checked);
+    });
+
+    sunburstCheckbox.addEventListener("change", (e) => {
+        sunburstSection.classList.toggle("is-hidden", !e.target.checked);
     });
 }
 
