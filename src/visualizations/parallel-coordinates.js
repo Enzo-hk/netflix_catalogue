@@ -5,13 +5,15 @@ import * as d3 from "d3";
 // Lines are drawn on a canvas (fast), axes and filters in SVG
 
 // Axes from left to right (log = true for columns with a few huge values)
+// zeroIsMissing: 0 means "unknown" in the data, not a real 0
 const AXES = [
     { key: "imdb_score",       label: "IMDb score",     log: false },
     { key: "imdb_votes",       label: "IMDb votes",     log: true  },
     { key: "budget",           label: "Budget ($)",     log: true  },
     { key: "revenue",          label: "Revenue ($)",    log: true  },
     { key: "duration_minutes", label: "Duration (min)", log: false },
-    { key: "cast_size",        label: "Cast size",      log: false },
+    { key: "cast_size",        label: "Cast size",      log: false, zeroIsMissing: true },
+    { key: "production_country_count", label: "Countries", log: false, zeroIsMissing: true },
 ];
 
 // Films in Netflix red, series in teal (colour-blind safe pair)
@@ -34,6 +36,13 @@ function getValue(row, key) {
     if (raw === null || raw === undefined || raw === "") return null;
     const number = +raw;
     return Number.isFinite(number) ? number : null;
+}
+
+// Value of a title on one axis, 0 counts as missing when the axis says so
+function axisValue(row, axis) {
+    const value = getValue(row, axis.key);
+    if (axis.zeroIsMissing && value === 0) return null;
+    return value;
 }
 
 // Ticks 1, 10, 100... inside [min, max], for log axes
@@ -91,7 +100,7 @@ export function createParallelCoordinates(svgSelector, data) {
 
     AXES.forEach(axis => {
         const values = rows
-            .map(d => getValue(d, axis.key))
+            .map(d => axisValue(d, axis))
             .filter(v => v !== null);
 
         if (values.length === 0) {
@@ -108,7 +117,7 @@ export function createParallelCoordinates(svgSelector, data) {
 
     // Height of a title on an axis, or the "no data" strip
     function yPosition(d, axis) {
-        const value = getValue(d, axis.key);
+        const value = axisValue(d, axis);
         return value === null ? noDataY : y[axis.key](value);
     }
 
@@ -193,12 +202,13 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("transform", axis => `translate(${x(axis.key)},0)`);
 
     axisGroups.each(function (axis) {
-        const axisGenerator = d3.axisLeft(y[axis.key]);
+        const axisGenerator = d3.axisLeft(y[axis.key])
+            .tickSizeOuter(0);  // no extra tick at the ends
 
         if (axis.log) {
             axisGenerator
                 .tickValues(powersOfTen(y[axis.key].domain()))
-                .tickFormat(d3.format("~s"));
+                .tickFormat(formatNumber);
         } else {
             axisGenerator.ticks(5);
         }
@@ -227,9 +237,9 @@ export function createParallelCoordinates(svgSelector, data) {
 
     // "no data" label
     axisGroups.append("text")
-        .attr("y", noDataY + 4)
+        .attr("y", noDataY + 16)
         .attr("x", -6)
-        .attr("text-anchor", "end")
+        .attr("text-anchor", "middle")
         .style("font-size", "9px")
         .style("fill", "#999")
         .text("no data");
@@ -249,7 +259,6 @@ export function createParallelCoordinates(svgSelector, data) {
             } else {
                 selections.delete(i);
             }
-            updateRangeLabels(i, event.selection);
             scheduleDraw();
         });
 
@@ -263,12 +272,6 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("fill-opacity", 0.08)
         .attr("stroke", HOVER_COLOR)
         .attr("stroke-width", 1.5)
-        .attr("rx", 3);
-
-    // Resize grips on the top and bottom edges
-    brushGroups.selectAll(".handle")
-        .attr("fill", HOVER_COLOR)
-        .attr("fill-opacity", 0.5)
         .attr("rx", 3);
 
     // Darker band on mouse over
@@ -404,7 +407,8 @@ export function createParallelCoordinates(svgSelector, data) {
             `Budget: ${formatMoney(d.budget)}`,
             `Revenue: ${formatMoney(d.revenue)}`,
             `Duration: ${d.duration_minutes === null ? "no data" : Math.round(d.duration_minutes) + " min"}`,
-            `Cast size: ${d.cast_size}`,
+            `Cast size: ${d.cast_size || "no data"}`,
+            `Countries: ${d.production_country_count || "no data"}`,
         ];
 
         // One line of text per entry, title in bold
@@ -457,7 +461,7 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("y", -52)
         .style("font-size", "11px")
         .style("fill", "#666")
-        .text("Drag on an axis to filter. Drag the box to move it, or its edges to resize. Click outside a box to remove it.");
+        .text("Drag on an axis to filter. Drag the box to move it, or its edges to resize.");
 
     const counter = g.append("text")
         .attr("y", height + 28)
@@ -472,13 +476,16 @@ export function createParallelCoordinates(svgSelector, data) {
         .style("font-weight", "bold")
         .style("fill", "#E50914")
         .style("cursor", "pointer")
-        .text("Reset filters")
+        .text("Reset all filters")
         .on("click", () => {
             // Removing each box clears its filter
             brushGroups.each(function () {
                 d3.select(this).call(brush.move, null);
             });
-        });
+        })
+        // Underline on mouse over, like a link
+        .on("pointerenter", () => resetButton.style("text-decoration", "underline"))
+        .on("pointerleave", () => resetButton.style("text-decoration", "none"));
 
     const emptyMessage = g.append("text")
         .attr("x", width / 2)
