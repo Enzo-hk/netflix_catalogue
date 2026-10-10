@@ -44,6 +44,7 @@ export function createBeeswarm(data) {
         .range(["#e50914", "#5646c0"]);
 
     const maxVotes = d3.max(data, d => Number(d.imdb_votes) || 0) || 1;
+
     // --------------------
     // Axis
     // --------------------
@@ -62,6 +63,34 @@ export function createBeeswarm(data) {
         .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
         .text("IMDb score");
+
+    // --------------------
+    // Legend
+    // --------------------
+
+    const legend = svg
+        .append("g")
+        .attr("transform", `translate(${width -100}, 20)`);
+
+    ["Movie", "TV Show"].forEach((type, i) => {
+
+        const item = legend
+            .append("g")
+            .attr("transform", `translate(0, ${i * 25})`);
+
+        item
+            .append("circle")
+            .attr("r", 6)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("fill", color(type));
+
+        item
+            .append("text")
+            .attr("x", 12)
+            .attr("y", 5)
+            .text(type);
+    });
 
     // --------------------
     // Nodes
