@@ -12,8 +12,9 @@
   <title>Netflix Visualization</title>
 
   <!-- style sheet -->
-<link rel="stylesheet" href="/src/styles/style.css">
-<link rel="stylesheet" href="/src/styles/sunburst.css">
+  <link rel="stylesheet" href="src/styles/style.css">
+  <link rel="stylesheet" href="src/styles/beeswarm.css">
+  <link rel="stylesheet" href="/src/styles/sunburst.css">
   <!-- you can add other stylesheets here if you want -->
 </head>
 
@@ -23,26 +24,26 @@
     <h1>Our amazing project!</h1>
     <!-- Label Toggles -->
     <div class="controls-container">
-    <label class="toggle-label">
-      <input type="checkbox" id="toggle-beeswarm" checked>
-      Beeswarm
-    </label>
-    <label class="toggle-label">
-      <input type="checkbox" id="toggle-stacked" checked>
-      Stacked Area Chart
-    </label>
-    <label class="toggle-label">
-      <input type="checkbox" id="toggle-choropleth" checked>
-      Choropleth
-    </label>
-    <label class="toggle-label">
-      <input type="checkbox" id="toggle-parallel" checked>
-      Parallel Coordinates
-    </label>
-    <label class="toggle-label">
-      <input type="checkbox" id="toggle-sunburst" checked>
-      Sunburst
-    </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-beeswarm" checked>
+        Beeswarm
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-stacked" checked>
+        Stacked Area Chart
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-choropleth" checked>
+        Choropleth
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-parallel" checked>
+        Parallel Coordinates
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-sunburst" checked>
+        Sunburst
+      </label>
 
     </div>
 
@@ -50,9 +51,19 @@
     <section class="visualization" id="section-beeswarm">
       <h2>Beeswarm</h2>
 
+      <div class="beeswarm-controls">
+        <label for="person-search">Filter by actor or director</label>
+        <input id="person-search" type="search" list="person-suggestions" placeholder="Start typing a name..."
+          autocomplete="off">
+        <datalist id="person-suggestions"></datalist>
+        <output id="beeswarm-result-count" aria-live="polite"></output>
+      </div>
+
       <div class="chart-container">
         <svg id="beeswarm"></svg>
       </div>
+
+      <div id="beeswarm-tooltip" class="tooltip"></div>
     </section>
     <section class="visualization" id="section-stacked">
       <h2>Stacked Area Chart</h2>
@@ -67,7 +78,7 @@
         <svg id="choropleth" width="1000" height="700"></svg>
       </div>
     </section>
-     <section class="visualization" id="section-parallel">
+    <section class="visualization" id="section-parallel">
       <h2>Parallel Coordinates</h2>
       <div class="chart-container">
         <svg id="parallel-coordinates"></svg>
