@@ -1,0 +1,93 @@
+
+.beeswarm-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.beeswarm-controls label {
+    font-weight: 600;
+}
+
+#person-search {
+    min-width: 260px;
+    padding: 8px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#beeswarm-result-count {
+    color: #555;
+    font-size: 13px;
+}
+
+#beeswarm-tooltip {
+    position: fixed;
+    display: none;
+    z-index: 1000;
+    pointer-events: none;
+
+    /* Appearance */
+    min-width: 180px;
+    max-width: 280px;
+    padding: 14px 16px;
+
+    background: rgba(24, 27, 35, 0.96);
+    color: #e8eaf0;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+
+    /* Typography */
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    line-height: 1.8;
+    letter-spacing: 0.2px;
+
+    /* Smooth appearance */
+    backdrop-filter: blur(8px);
+}
+
+/* Movie or series title */
+#beeswarm-tooltip strong {
+    display: block;
+    margin-bottom: 8px;
+
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.4;
+
+    overflow-wrap: anywhere;
+}
+
+/* Highlight the IMDb score */
+#beeswarm-tooltip .tooltip-score {
+    display: inline-block;
+    margin: 2px 0;
+    padding: 1px 7px;
+
+    background: rgba(245, 197, 24, 0.15);
+    color: #f5c518;
+
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Highlight metadata labels */
+#beeswarm-tooltip .tooltip-label {
+    color: #9ca3b4;
+    font-weight: 500;
+}
+
+/* Make long director names wrap */
+#beeswarm-tooltip {
+    overflow-wrap: anywhere;
+}
