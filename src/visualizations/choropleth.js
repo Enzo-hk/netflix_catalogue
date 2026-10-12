@@ -1,6 +1,49 @@
 import * as d3 from "d3";
 import { countTitlesByCountry } from "../data/processData.js";
 
+function drawLegend(svg, colorScale, centerX, y) {
+    const domain = colorScale.domain();
+    const items = [
+        { label: "0", color: "lightgrey" },
+        ...domain.map((t, i) => ({
+            label: i < domain.length - 1 ? `${t}–${domain[i + 1] - 1}` : `${t}+`,
+            color: colorScale(t)
+        }))
+    ];
+    const swatchWidth = 55;
+    const x = centerX - (items.length * swatchWidth) / 2;
+
+    const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${x},${y})`);
+
+    legend.append("text")
+        .attr("y", -8)
+        .style("font-size", "12px")
+        .style("font-weight", "bold")
+        .style("fill", "white")
+        .text("Number of films produced");
+
+    const item = legend.selectAll("g")
+        .data(items)
+        .join("g")
+        .attr("transform", (d, i) => `translate(${i * swatchWidth},0)`);
+
+    item.append("rect")
+        .attr("width", swatchWidth)
+        .attr("height", 12)
+        .attr("fill", d => d.color)
+        .style("opacity", .8);
+
+    item.append("text")
+        .attr("x", swatchWidth / 2)
+        .attr("y", 26)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .style("fill", "white")
+        .text(d => d.label);
+}
+
 export function createChoropleth(data) {
     console.log("createChoropleth called with", data.length, "titles");
 
@@ -76,7 +119,7 @@ export function createChoropleth(data) {
                 .style("opacity", .8)
                 .on("mouseover", mouseOver)
                 .on("mouseleave", mouseLeave)
-
+                drawLegend(svg, colorScale, width / 2 + 50, height - 40);
         })
 
 }
