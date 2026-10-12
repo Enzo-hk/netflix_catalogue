@@ -1,9 +1,12 @@
+/* Dark theme, same palette as the rest of the app (style.css) */
 .sunburst {
   --sb-text: #f4eded;
-  --sb-muted: #6b6b6b;
-  --sb-border: #e4e4e7;
-  --sb-surface: #ffffff;
-  --sb-accent: #b20710;
+  --sb-muted: #a3a3a3;
+  --sb-border: #2f2f2f;
+  --sb-surface: #181818;        /* same as the chart cards */
+  --sb-surface-raised: #1f1f1f; /* panel, centre */
+  --sb-hover: #2a2a2a;
+  --sb-accent: #e50914;         /* Netflix red */
 
   display: grid;
   grid-template-columns: minmax(0, 640px) minmax(240px, 320px);
@@ -40,7 +43,8 @@
 }
 
 .sunburst__centre circle {
-  fill: var(--sb-surface);
+  fill: var(--sb-surface-raised);
+  stroke: var(--sb-border);
 }
 
 .sunburst__centre.is-zoomed {
@@ -48,7 +52,7 @@
 }
 
 .sunburst__centre.is-zoomed circle:hover {
-  fill: #f4f4f5;
+  fill: var(--sb-hover);
 }
 
 .sunburst__centre text {
@@ -59,6 +63,7 @@
 .sunburst__centre-name {
   font-size: 15px;
   font-weight: 700;
+  fill: var(--sb-text);
 }
 
 .sunburst__centre-count {
@@ -120,30 +125,13 @@
   border-radius: 3px;
 }
 
-.sunburst__tooltip {
-  position: absolute;
-  z-index: 10;
-  max-width: 260px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: rgba(24, 24, 27, 0.92);
-  color: #fafafa;
-  font-size: 13px;
-  line-height: 1.45;
-  pointer-events: none;
-}
-
-.sunburst__tooltip[hidden] {
-  display: none;
-}
-
 .sunburst__details {
   max-height: 680px;
   overflow-y: auto;
   padding: 16px;
   border: 1px solid var(--sb-border);
   border-radius: 8px;
-  background: var(--sb-surface);
+  background: var(--sb-surface-raised);
 }
 
 .sunburst__details h3 {
@@ -165,8 +153,13 @@
 }
 
 .sunburst__list li {
-  padding: 6px 0;
+  padding: 6px 4px;
   border-bottom: 1px solid var(--sb-border);
+}
+
+/* the hovered title is the one described by the card */
+.sunburst__list li:hover {
+  background: var(--sb-hover);
 }
 
 .sunburst__title {

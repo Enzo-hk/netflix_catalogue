@@ -1,0 +1,67 @@
+/* Shared title card (src/components/tooltip.js), same look as the beeswarm tooltip */
+
+.title-card {
+    position: fixed;
+    display: none;
+    z-index: 1000;
+    pointer-events: none;
+
+    min-width: 180px;
+    max-width: 280px;
+    padding: 14px 16px;
+
+    background: rgba(24, 27, 35, 0.96);
+    color: #e8eaf0;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    line-height: 1.8;
+    letter-spacing: 0.2px;
+    overflow-wrap: anywhere;
+
+    backdrop-filter: blur(8px);
+}
+
+/* Movie or series title */
+.title-card strong {
+    display: block;
+    margin-bottom: 8px;
+
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+/* IMDb score badge */
+.title-card__score {
+    display: inline-block;
+    margin: 2px 0;
+    padding: 1px 7px;
+
+    background: rgba(245, 197, 24, 0.15);
+    color: #f5c518;
+
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Hint for the next action ("Click to zoom in") */
+.title-card__hint {
+    margin-top: 6px;
+    color: #9ca3b4;
+    font-style: italic;
+}
+
+/* Metadata labels */
+.title-card__label {
+    color: #9ca3b4;
+    font-weight: 500;
+}
