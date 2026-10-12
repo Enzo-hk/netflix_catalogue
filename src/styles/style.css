@@ -85,3 +85,15 @@ svg {
   display: block;
   width: 100%;
 }
+
+/* Choropleth tooltip */
+.choropleth-tooltip {
+  position: absolute;      /* positioned with the cursor's page coordinates */
+  pointer-events: none;    /* prevents the tooltip from flickering */
+  background: #181818;
+  border: 1px solid #e50914;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #ffffff;
+}

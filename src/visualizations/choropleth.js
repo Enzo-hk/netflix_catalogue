@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { countTitlesByCountry } from "../data/processData.js";
+import { statsByCountry } from "../data/processData.js";
 
 function drawLegend(svg, colorScale, centerX, y) {
     const domain = colorScale.domain();
@@ -58,24 +58,32 @@ export function createChoropleth(data) {
         .center([5, 40])
         .translate([width / 2, height / 2]);
 
-    // Data and color scale
-    const titlesByCountry = countTitlesByCountry(data);
-    console.log("titlesByCountry counts:", [...titlesByCountry.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10));
+    // Data mapping by country name → { total, topYear, topYearCount, genres }
+    const countryStats = statsByCountry(data);
+    console.log("countryStats (top 10 by titles):", [...countryStats.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, 10));
 
+    // Colour scale
     const countryData = new Map();
     const colorScale = d3.scaleThreshold()
         .domain([1, 10, 50, 100, 500, 1000])
         .range(d3.schemeReds[7]);
 
-    // Load external data and boot
+    // Create tooltip: a single hidden <div> reused for every country
+    const tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "choropleth-tooltip")
+        .style("opacity", 0);
+
+    // Load external data
     Promise.all([
         d3.json("public/data/raw/world_countries.geojson")
         ]).then(function (loadData) {
             let topo = loadData[0];
-            console.log("GeoJSON loaded with", topo.features.length, "features");
+            console.log("GeoJSON loaded with", topo.features.length, "features"); // TODO: remove all console logs later
             console.log("First 5 feature IDs:", topo.features.slice(0, 5).map(f => f.id || f.properties?.name));
 
-            let mouseOver = function (d) {
+            // Event handlers for mouse actions
+            let mouseOver = function (event, d) {
                 d3.selectAll(".Country")
                     .transition()
                     .duration(200)
@@ -84,10 +92,32 @@ export function createChoropleth(data) {
                     .transition()
                     .duration(200)
                     .style("opacity", 1)
-                    .style("stroke", "brown") // maybe remove border later?
+                    .style("stroke", "brown") // TODO: maybe remove border later?
+
+                // Display tooltip: name, title count, most active year and the top 5 genres
+                const s = d.stats;
+                const genreLines = s
+                    ? s.genres.slice(0, 5).map(g => `${g.genre}: ${g.pct.toFixed(0)}%`).join("<br>")
+                    : "";
+                tooltip
+                    .style("opacity", 1)
+                    .html(s
+                        ? `<strong>${d.properties.name}</strong><br>
+                           Titles: ${s.total}<br>
+                           Most active year: ${s.topYear} (${s.topYearCount} titles)<br>
+                           <em>Top 5 Genres</em><br>${genreLines}`
+                        : `<strong>${d.properties.name}</strong><br>No titles`);
             }
 
-            let mouseLeave = function (d) {
+            // Keep the tooltip next to the cursor
+            let mouseMove = function (event) {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            }
+
+            // Hide the tooltip when the cursor leaves the country
+            let mouseLeave = function (event, d) {
                 d3.selectAll(".Country")
                     .transition()
                     .duration(200)
@@ -96,9 +126,10 @@ export function createChoropleth(data) {
                     .transition()
                     .duration(200)
                     .style("stroke", "transparent")
+                tooltip.style("opacity", 0);
             }
 
-            // Draw the map
+            // Draw the choropleth map
             svg.append("g")
                 .selectAll("path")
                 .data(topo.features)
@@ -110,14 +141,17 @@ export function createChoropleth(data) {
                 )
                 // set the color of each country
                 .attr("fill", function (d) {
-                    d.total = titlesByCountry.get(d.properties.name) || 0;
-                    console.log(d.properties.name, "→", d.total);
-                    return d.total ? colorScale(d.total) : "lightgrey";
+                    // Attach the country's stats to the tooltip (0/undefined if it has no titles)
+                    d.stats = countryStats.get(d.properties.name);
+                    d.total = d.stats ? d.stats.total : 0;
+                    console.log(d.properties.name, "→", d.total); 
+                    return d.total ? colorScale(d.total) : "darkgrey";
                 })
                 .style("stroke", "transparent")
                 .attr("class", function (d) { return "Country" })
                 .style("opacity", .8)
                 .on("mouseover", mouseOver)
+                .on("mousemove", mouseMove)
                 .on("mouseleave", mouseLeave)
                 drawLegend(svg, colorScale, width / 2 + 50, height - 40);
         })
