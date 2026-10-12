@@ -1,6 +1,9 @@
 import * as d3 from "d3";
 
-export function createStackedAreaChart(svgSelector, data) {
+// Shared filters (coordinated views), all optional:
+//   yearRange: [from, to] shown as a brush selection, onSelectYears(from, to) when the user brushes a period
+//   selectedType: "Movie" | "TV Show" | "", onSelectType(type) when a legend item is clicked
+export function createStackedAreaChart(svgSelector, data, { yearRange = [null, null], onSelectYears, selectedType = "", onSelectType } = {}) {
     // 1. Sélectionner le SVG existant et le vider
     const svg = d3.select(svgSelector);
     svg.selectAll("*").remove();
@@ -84,8 +87,13 @@ const colorScale = d3.scaleOrdinal()
         .attr("transform", `translate(${width + 15}, 10)`);
 
     keys.forEach((key, i) => {
+        // click on a legend item -> shared type filter (click again to remove it)
+        const type = key === "MOVIE" ? "Movie" : "TV Show";
         const legendRow = legend.append("g")
-            .attr("transform", `translate(0, ${i * 20})`);
+            .attr("transform", `translate(0, ${i * 20})`)
+            .style("cursor", onSelectType ? "pointer" : null)
+            .style("opacity", selectedType && selectedType !== type ? 0.35 : 1)
+            .on("click", () => onSelectType?.(selectedType === type ? "" : type));
 
         legendRow.append("rect")
             .attr("width", 12)
@@ -100,10 +108,34 @@ const colorScale = d3.scaleOrdinal()
             .style("fill", "currentColor")
             .text(key === "MOVIE" ? "Movie" : "TV Show");
     });
-    addHoverEffect(g, formattedData, xScale, width, height);
+    addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears });
 }
 
-function addHoverEffect(g, formattedData, xScale, width, height) {
+// Brush on the x axis -> shared year filter. Returns the brush group, which also receives the hover events.
+function addYearBrush(g, xScale, width, height, yearRange, onSelectYears) {
+    const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on("end", (event) => {
+            if (!event.sourceEvent) return; // moved by the code below, not by the user
+            if (!event.selection) return onSelectYears(null, null);
+            const [from, to] = event.selection.map((x) => Math.round(xScale.invert(x)));
+            onSelectYears(from, to);
+        });
+    const brushGroup = g.append("g").attr("class", "stacked-brush").call(brush);
+
+    // show the current year filter as a selection
+    const [minYear, maxYear] = xScale.domain();
+    const [from, to] = yearRange;
+    if ((from != null || to != null) && (from ?? minYear) <= maxYear && (to ?? maxYear) >= minYear) {
+        brushGroup.call(brush.move, [
+            xScale(Math.max(from ?? minYear, minYear)),
+            xScale(Math.min(to ?? maxYear, maxYear)),
+        ]);
+    }
+    return brushGroup;
+}
+
+function addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears } = {}) {
     // Ligne verticale de repère
     const hoverLine = g.append("line")
         .attr("y1", 0)
@@ -142,12 +174,17 @@ function addHoverEffect(g, formattedData, xScale, width, height) {
     const bisectYear = d3.bisector(d => d.year).center;
 
     // Rectangle overlay pour capturer les mouvements de la souris
-    g.append("rect")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("fill", "none")
-        .attr("pointer-events", "all")
-        .on("pointerenter pointermove", function(event) {
+    // (with the shared filters, the brush plays this role so that hover and brush both work)
+    const overlay = onSelectYears
+        ? addYearBrush(g, xScale, width, height, yearRange, onSelectYears)
+        : g.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("fill", "none")
+            .attr("pointer-events", "all");
+
+    overlay
+        .on("pointerenter.hover pointermove.hover", function(event) {
             const [mouseX] = d3.pointer(event);
             const xYear = xScale.invert(mouseX);
             const index = bisectYear(formattedData, xYear);
@@ -186,7 +223,7 @@ function addHoverEffect(g, formattedData, xScale, width, height) {
                 .attr("width", 130)
                 .attr("height", 55);
         })
-        .on("pointerleave", function() {
+        .on("pointerleave.hover", function() {
             hoverLine.style("opacity", 0);
             tooltipGroup.style("opacity", 0);
         });

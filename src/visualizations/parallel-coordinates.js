@@ -66,7 +66,8 @@ function formatMoney(value) {
 }
 
 // Called from main.js
-export function createParallelCoordinates(svgSelector, data) {
+// Shared filters (coordinated views), optional: selectedType + onSelectType(type) when a legend item is clicked
+export function createParallelCoordinates(svgSelector, data, { selectedType = "", onSelectType } = {}) {
 
     // 1. Clear the SVG
     const svg = d3.select(svgSelector);
@@ -549,8 +550,12 @@ export function createParallelCoordinates(svgSelector, data) {
         .attr("transform", `translate(${width - 140}, -62)`);
 
     Object.entries(TYPE_COLORS).forEach(([type, color], i) => {
+        // click on a legend item -> shared type filter (click again to remove it)
         const item = legend.append("g")
-            .attr("transform", `translate(${i * 70}, 0)`);
+            .attr("transform", `translate(${i * 70}, 0)`)
+            .style("cursor", onSelectType ? "pointer" : null)
+            .style("opacity", selectedType && selectedType !== type ? 0.35 : 1)
+            .on("click", () => onSelectType?.(selectedType === type ? "" : type));
 
         item.append("rect")
             .attr("width", 12)

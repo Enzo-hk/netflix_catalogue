@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { statsByCountry } from "../data/processData.js";
+import { statsByCountry, toNetflixCountryName } from "../data/processData.js";
 
 function drawLegend(svg, colorScale, centerX, y) {
     const domain = colorScale.domain();
@@ -44,7 +44,9 @@ function drawLegend(svg, colorScale, centerX, y) {
         .text(d => d.label);
 }
 
-export function createChoropleth(data) {
+// selectedCountry: the shared "country" filter (Netflix spelling), highlighted on the map
+// onSelectCountry(name): called when a country is clicked ("" when the selected one is clicked again)
+export function createChoropleth(data, { selectedCountry = "", onSelectCountry } = {}) {
     console.log("createChoropleth called with", data.length, "titles");
 
     const svg = d3.select("#choropleth"),
@@ -69,8 +71,11 @@ export function createChoropleth(data) {
         .range(d3.schemeReds[7]);
 
     // Create tooltip: a single hidden <div> reused for every country
+    // (selectAll + join: the map is redrawn when the shared filters change, the <div> must not be duplicated)
     const tooltip = d3.select("body")
-        .append("div")
+        .selectAll("div.choropleth-tooltip")
+        .data([null])
+        .join("div")
         .attr("class", "choropleth-tooltip")
         .style("opacity", 0);
 
@@ -79,6 +84,7 @@ export function createChoropleth(data) {
         d3.json("public/data/raw/world_countries.geojson")
         ]).then(function (loadData) {
             let topo = loadData[0];
+            svg.selectAll("*").remove(); // redrawn when the shared filters change
             console.log("GeoJSON loaded with", topo.features.length, "features"); // TODO: remove all console logs later
             console.log("First 5 feature IDs:", topo.features.slice(0, 5).map(f => f.id || f.properties?.name));
 
@@ -109,6 +115,10 @@ export function createChoropleth(data) {
                         : `<strong>${d.properties.name}</strong><br>No titles`);
             }
 
+            // the selected country keeps a white border
+            const isSelected = (d) => selectedCountry && toNetflixCountryName(d.properties.name) === selectedCountry;
+            const restingStroke = (d) => (isSelected(d) ? "#ffffff" : "transparent");
+
             // Keep the tooltip next to the cursor
             let mouseMove = function (event) {
                 tooltip
@@ -125,8 +135,15 @@ export function createChoropleth(data) {
                 d3.select(this)
                     .transition()
                     .duration(200)
-                    .style("stroke", "transparent")
+                    .style("stroke", restingStroke(d))
                 tooltip.style("opacity", 0);
+            }
+
+            // click on a country -> shared country filter (click again to remove it)
+            let click = function (event, d) {
+                if (!onSelectCountry || !d.total) return;
+                const name = toNetflixCountryName(d.properties.name);
+                onSelectCountry(name === selectedCountry ? "" : name);
             }
 
             // Draw the choropleth map
@@ -147,12 +164,16 @@ export function createChoropleth(data) {
                     console.log(d.properties.name, "→", d.total); 
                     return d.total ? colorScale(d.total) : "darkgrey";
                 })
-                .style("stroke", "transparent")
+                .style("stroke", restingStroke)
+                .style("stroke-width", (d) => (isSelected(d) ? 2 : 1))
+                .style("cursor", (d) => (onSelectCountry && d.total ? "pointer" : "default"))
                 .attr("class", function (d) { return "Country" })
                 .style("opacity", .8)
                 .on("mouseover", mouseOver)
                 .on("mousemove", mouseMove)
                 .on("mouseleave", mouseLeave)
+                .on("click", click);
+
                 drawLegend(svg, colorScale, width / 2 + 50, height - 40);
         })
 

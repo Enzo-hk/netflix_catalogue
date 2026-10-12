@@ -49,7 +49,8 @@ export function buildHierarchy(titles) {
     // Unique titles per node (a multi-genre title must not be counted twice in "Movie")
     root.eachAfter((node) => {
         if (!node.children) {
-            node.titles = node.data[1].map((row) => row.title);
+            // no children: an age group (array of rows), or an empty catalogue when no title matches the filters
+            node.titles = Array.isArray(node.data[1]) ? node.data[1].map((row) => row.title) : [];
         } else {
             const unique = new Map();
             for (const child of node.children) for (const t of child.titles) unique.set(t.show_id, t);
@@ -73,8 +74,15 @@ const pathOf = (node) => node.ancestors().reverse().map((d) => d.data[0]);
 // View
 // ---------------------------------------------------------------------------
 
-export function createSunburst(container, titles, { onSelect } = {}) {
+// onFocusChange(path, { zoomOut }): called when the user zooms or selects an age group,
+// path = ["Movie"], ["Movie", "Drama"] or ["Movie", "Drama", "Kids"] -> shared filters type / genre / age group
+export function createSunburst(container, titles, { onSelect, onFocusChange } = {}) {
     const root = d3.select(container).classed("sunburst", true).html("");
+
+    // etat qui doit survivre a un nouveau dessin
+    const view = { hierarchy: null, zoom: null, focus: null };
+    let selectedLeafPath = null;   // "Catalogue|Movie|Drama|Kids" quand un groupe d'age est selectionne
+    let lastSignature = "";        // pour ne pas redessiner si les donnees n'ont pas change
 
     const chart = root.append("div").attr("class", "sunburst__chart");
     const breadcrumb = chart.append("nav").attr("class", "sunburst__breadcrumb").attr("aria-label", "Current level");
@@ -88,6 +96,7 @@ export function createSunburst(container, titles, { onSelect } = {}) {
 
     function render(data) {
         svg.selectAll("*").remove();
+        selectedLeafPath = null;
         const hierarchy = buildHierarchy(data);
         d3.partition().size([2 * Math.PI, hierarchy.height + 1])(hierarchy);
         hierarchy.each((d) => { d.current = d; });
@@ -146,7 +155,9 @@ export function createSunburst(container, titles, { onSelect } = {}) {
         const centreName = centre.append("text").attr("class", "sunburst__centre-name").attr("dy", "-0.3em");
         const centreCount = centre.append("text").attr("class", "sunburst__centre-count").attr("dy", "1.1em");
 
-        function zoom(focus) {
+        // silent = zoom demande par les filtres partages (pas par un clic) : on ne previent personne
+        function zoom(focus, { duration = 750, silent = false } = {}) {
+            const zoomOut = focus.depth < (centre.datum()?.depth ?? 0);
             hierarchy.each((d) => {
                 d.target = {
                     x0: Math.max(0, Math.min(1, (d.x0 - focus.x0) / (focus.x1 - focus.x0))) * 2 * Math.PI,
@@ -155,7 +166,7 @@ export function createSunburst(container, titles, { onSelect } = {}) {
                     y1: Math.max(0, d.y1 - focus.depth),
                 };
             });
-            const t = svg.transition().duration(750);
+            const t = svg.transition().duration(duration);
             path.transition(t)
                 .tween("data", (d) => {
                     const i = d3.interpolate(d.current, d.target);
@@ -170,6 +181,12 @@ export function createSunburst(container, titles, { onSelect } = {}) {
                 .attr("fill-opacity", (d) => +labelVisible(d.target))
                 .attrTween("transform", (d) => () => labelTransform(d.current));
             setFocus(focus);
+            if (!silent) {
+                // clic de l'utilisateur -> filtres partages (zoomer en arriere retire les niveaux du dessous)
+                selectedLeafPath = null;
+                showDetails(null);
+                onFocusChange?.(pathOf(focus).slice(1), { zoomOut });
+            }
         }
 
         function setFocus(focus) {
@@ -206,12 +223,56 @@ export function createSunburst(container, titles, { onSelect } = {}) {
         renderLegend(legend, color(hierarchy.children?.[0]?.children?.[0]?.data[0]));
         setFocus(hierarchy);
         showDetails(null);
+
+        view.hierarchy = hierarchy;
+        view.zoom = zoom;
+        view.focus = () => centre.datum();
     }
 
-    function select(leaf) {
-        const [, type, genre, age] = pathOf(leaf);
+    // clic sur un groupe d'age : liste des titres + filtre "Audience" (un 2e clic l'enleve)
+    function select(leaf, { silent = false } = {}) {
+        const fullPath = pathOf(leaf);
+        if (!silent && selectedLeafPath === fullPath.join("|")) {
+            selectedLeafPath = null;
+            showDetails(null);
+            onFocusChange?.(fullPath.slice(1, -1), { zoomOut: true });
+            return;
+        }
+        selectedLeafPath = fullPath.join("|");
+        const [, type, genre, age] = fullPath;
         showDetails({ type, genre, age, titles: leaf.titles });
         onSelect?.({ type, genre, age, titles: leaf.titles });
+        if (!silent) onFocusChange?.(fullPath.slice(1), { zoomOut: false });
+    }
+
+    // les filtres partages ont change ailleurs (barre, autre vue) : zoomer sur le bon arc
+    function applyFocus(path, duration) {
+        if (!view.hierarchy.children) return; // aucun titre : rien a zoomer
+        let node = view.hierarchy;
+        for (const name of path) {
+            const child = node.children?.find((c) => c.data[0] === name);
+            if (!child) break;
+            node = child;
+        }
+        const target = node.children ? node : node.parent; // un groupe d'age ne peut pas etre le centre
+        if (target !== view.focus()) view.zoom(target, { duration, silent: true });
+        if (!node.children) {
+            if (selectedLeafPath !== pathOf(node).join("|")) select(node, { silent: true });
+        } else if (selectedLeafPath) {
+            selectedLeafPath = null;
+            showDetails(null);
+        }
+    }
+
+    // appele par main.js a chaque changement des filtres partages
+    function update(data, { focus = [] } = {}) {
+        const signature = `${data.length}|${data[0]?.show_id}|${data.at(-1)?.show_id}`;
+        const changed = signature !== lastSignature;
+        if (changed) {
+            lastSignature = signature;
+            render(data);
+        }
+        applyFocus(focus, changed ? 0 : 750);
     }
 
     function showDetails(selection) {
@@ -246,8 +307,8 @@ export function createSunburst(container, titles, { onSelect } = {}) {
         }
     }
 
-    render(titles);
-    return { update: render };
+    update(titles);
+    return { update };
 }
 
 // ---------------------------------------------------------------------------

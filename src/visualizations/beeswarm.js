@@ -1,8 +1,10 @@
 import * as d3 from "d3";
 
-export function createBeeswarm(data) {
+// Shared filters (coordinated views), optional: selectedType + onSelectType(type) when a legend item is clicked
+export function createBeeswarm(data, { selectedType = "", onSelectType } = {}) {
 
     const svg = d3.select("#beeswarm");
+    svg.selectAll("*").remove(); // redrawn when the shared filters change
     const searchInput = d3.select("#person-search");
     const suggestions = d3.select("#person-suggestions");
     const resultCount = d3.select("#beeswarm-result-count");
@@ -75,9 +77,13 @@ export function createBeeswarm(data) {
 
     ["Movie", "TV Show"].forEach((type, i) => {
 
+        // click on a legend item -> shared type filter (click again to remove it)
         const item = legend
             .append("g")
-            .attr("transform", `translate(0, ${i * 25})`);
+            .attr("transform", `translate(0, ${i * 25})`)
+            .style("cursor", onSelectType ? "pointer" : null)
+            .style("opacity", selectedType && selectedType !== type ? 0.35 : 1)
+            .on("click", () => onSelectType?.(selectedType === type ? "" : type));
 
         item
             .append("circle")
