@@ -1,7 +1,9 @@
 import * as d3 from "d3";
-import { countTitlesByCountry } from "../data/processData.js";
+import { countTitlesByCountry, toNetflixCountryName } from "../data/processData.js";
 
-export function createChoropleth(data) {
+// selectedCountry: the shared "country" filter (Netflix spelling), highlighted on the map
+// onSelectCountry(name): called when a country is clicked ("" when the selected one is clicked again)
+export function createChoropleth(data, { selectedCountry = "", onSelectCountry } = {}) {
     console.log("createChoropleth called with", data.length, "titles");
 
     const svg = d3.select("#choropleth"),
@@ -29,6 +31,7 @@ export function createChoropleth(data) {
         d3.json("public/data/raw/world_countries.geojson")
         ]).then(function (loadData) {
             let topo = loadData[0];
+            svg.selectAll("*").remove(); // redrawn when the shared filters change
             console.log("GeoJSON loaded with", topo.features.length, "features");
             console.log("First 5 feature IDs:", topo.features.slice(0, 5).map(f => f.id || f.properties?.name));
 
@@ -44,7 +47,11 @@ export function createChoropleth(data) {
                     .style("stroke", "brown") // maybe remove border later?
             }
 
-            let mouseLeave = function (d) {
+            // the selected country keeps a white border
+            const isSelected = (d) => selectedCountry && toNetflixCountryName(d.properties.name) === selectedCountry;
+            const restingStroke = (d) => (isSelected(d) ? "#ffffff" : "transparent");
+
+            let mouseLeave = function (event, d) {
                 d3.selectAll(".Country")
                     .transition()
                     .duration(200)
@@ -52,7 +59,14 @@ export function createChoropleth(data) {
                 d3.select(this)
                     .transition()
                     .duration(200)
-                    .style("stroke", "transparent")
+                    .style("stroke", restingStroke(d))
+            }
+
+            // click on a country -> shared country filter (click again to remove it)
+            let click = function (event, d) {
+                if (!onSelectCountry || !d.total) return;
+                const name = toNetflixCountryName(d.properties.name);
+                onSelectCountry(name === selectedCountry ? "" : name);
             }
 
             // Draw the map
@@ -71,11 +85,14 @@ export function createChoropleth(data) {
                     console.log(d.properties.name, "→", d.total);
                     return d.total ? colorScale(d.total) : "lightgrey";
                 })
-                .style("stroke", "transparent")
+                .style("stroke", restingStroke)
+                .style("stroke-width", (d) => (isSelected(d) ? 2 : 1))
+                .style("cursor", (d) => (onSelectCountry && d.total ? "pointer" : "default"))
                 .attr("class", function (d) { return "Country" })
                 .style("opacity", .8)
                 .on("mouseover", mouseOver)
                 .on("mouseleave", mouseLeave)
+                .on("click", click)
 
         })
 

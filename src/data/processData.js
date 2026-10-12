@@ -9,6 +9,12 @@ const NAME_ALIASES = {
     "Tanzania": "United Republic of Tanzania",
 };
 
+// map (GeoJSON) spelling → Netflix spelling, used when a country is clicked on the map
+export function toNetflixCountryName(geoName) {
+    const entry = Object.entries(NAME_ALIASES).find(([, alias]) => alias === geoName);
+    return entry ? entry[0] : geoName;
+}
+
 export function countTitlesByCountry(titles) {
     return d3.rollup(
         titles.flatMap(t => t.countries),
