@@ -25,7 +25,7 @@ const OPACITY_SELECTED = 0.6;
 const OPACITY_FADED = 0.02;
 
 // Netflix black for the hovered line and the filter boxes
-const HOVER_COLOR = "#141414";
+const HOVER_COLOR = "#e1d7d7";
 
 // Half-width of the draggable zone around each axis, in px
 const DRAG_ZONE = 18;
