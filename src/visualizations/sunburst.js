@@ -14,6 +14,7 @@
 // volume of each genre; the counts displayed in the centre and the tooltip are unique titles.
 
 import * as d3 from "d3"; //manipuler les donnes et de creer la visualisation
+import { createTitleCard } from "../components/tooltip.js"; // carte d'un titre, la meme que dans le beeswarm
 
 //=========Constantes===================
 const AGE_ORDER = ["Kids", "Older Kids", "Teens", "Adults", "Unrated"]; // odre d age qui doivent appraraitre used for trier les trier les groupes dans le Sunburst 
@@ -82,8 +83,8 @@ export function createSunburst(container, titles, { onSelect } = {}) {
         .attr("role", "img")
         .attr("aria-label", "Sunburst of the Netflix catalogue: type, genre family and age group");
     const legend = chart.append("div").attr("class", "sunburst__legend");
-    const tooltip = chart.append("div").attr("class", "sunburst__tooltip").attr("hidden", true);
     const details = root.append("aside").attr("class", "sunburst__details");
+    const titleCard = createTitleCard(); // s'affiche au survol d'un titre de la liste
 
     function render(data) {
         svg.selectAll("*").remove();
@@ -120,8 +121,9 @@ export function createSunburst(container, titles, { onSelect } = {}) {
             .attr("pointer-events", (d) => (arcVisible(d.current) ? "auto" : "none"))
             .attr("d", (d) => arc(d.current))
             .on("click", (event, d) => (d.children ? zoom(d) : select(d)))
-            .on("mouseenter mousemove", (event, d) => showTooltip(event, d))
-            .on("mouseleave", () => tooltip.attr("hidden", true));
+            .on("mouseenter", (event, d) => showTooltip(event, d))
+            .on("mousemove", (event) => titleCard.move(event))
+            .on("mouseleave", () => titleCard.hide());
 
         const label = svg.append("g")
             .attr("class", "sunburst__labels")
@@ -185,18 +187,20 @@ export function createSunburst(container, titles, { onSelect } = {}) {
             });
         }
 
+        // survol d'un arc -> meme carte que celle du beeswarm, version "groupe de titres"
         function showTooltip(event, d) {
-            const [x, y] = d3.pointer(event, chart.node());
-            const lines = [
-                `<strong>${pathOf(d).slice(1).join(" › ")}</strong>`,
-                `${formatCount(d.titles.length)} titles`,
-                `${formatPercent(d.value / d.parent.value)} of ${d.parent.data[0]}`,
+            const scores = d.titles.map((t) => t.imdb_score).filter((s) => s != null);
+            const rows = [
+                ["Titles:", formatCount(d.titles.length)],
+                [`Share of ${d.parent.data[0]}:`, formatPercent(d.value / d.parent.value)],
             ];
-            if (d.depth > 1) lines.push(`${formatPercent(d.value / hierarchy.value)} of the catalogue`);
-            if (!d.children) lines.push("<em>Click to list the titles</em>");
-            tooltip.attr("hidden", null).html(lines.join("<br>"))
-                .style("left", `${x + 14}px`)
-                .style("top", `${y + 14}px`);
+            if (d.depth > 1) rows.push(["Share of catalogue:", formatPercent(d.value / hierarchy.value)]);
+            titleCard.showSummary(event, {
+                heading: pathOf(d).slice(1).join(" › "),
+                score: scores.length ? d3.mean(scores) : null,  // moyenne des titres qui ont un score
+                rows,
+                hint: d.children ? "Click to zoom in" : "Click to list the titles",
+            });
         }
 
         renderLegend(legend, color(hierarchy.children?.[0]?.children?.[0]?.data[0]));
@@ -232,7 +236,10 @@ export function createSunburst(container, titles, { onSelect } = {}) {
             t.duration_minutes ? `${t.duration_minutes} min` : t.seasons ? `${t.seasons} season${t.seasons > 1 ? "s" : ""}` : null,
             t.imdb_score != null ? `IMDb ${formatScore(t.imdb_score)}` : null,
         ].filter(Boolean).join(" · "));
-        item.attr("title", (t) => t.description);
+        // survol d'un titre -> meme carte que dans les autres visualisations
+        item.on("mouseenter", (event, t) => titleCard.show(event, t))
+            .on("mousemove", (event) => titleCard.move(event))
+            .on("mouseleave", () => titleCard.hide());
         if (sorted.length > MAX_LISTED_TITLES) {
             details.append("p").attr("class", "sunburst__more")
                 .text(`+ ${formatCount(sorted.length - MAX_LISTED_TITLES)} more titles`);
