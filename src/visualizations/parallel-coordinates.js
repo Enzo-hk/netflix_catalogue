@@ -367,16 +367,46 @@ export function createParallelCoordinates(svgSelector, data, { onFilterChange } 
         .attr("stroke", "#fff")
         .attr("stroke-width", 1.5);
 
-    // Tooltip, same style as the stacked area chart
-    const tooltip = g.append("g")
+    // Hover card: an HTML div on the page, styled like the beeswarm card
+    d3.selectAll(".pc-tooltip").remove();  // old card if the chart is redrawn
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "pc-tooltip")
+        .style("position", "fixed")
         .style("pointer-events", "none")
-        .style("display", "none");
-    const tooltipBg = tooltip.append("rect")
-        .attr("fill", "rgba(0, 0, 0, 0.85)")
-        .attr("rx", 5);
-    const tooltipText = tooltip.append("text")
-        .attr("fill", "#fff")
-        .style("font-size", "11px");
+        .style("display", "none")
+        .style("z-index", 1000)
+        .style("max-width", "300px")
+        .style("padding", "14px 18px")
+        .style("background", "#1b1e25")
+        .style("border", "1px solid #3a3d46")
+        .style("border-radius", "12px")
+        .style("box-shadow", "0 8px 24px rgba(0, 0, 0, 0.5)")
+        .style("color", "#fff")
+        .style("font-size", "14px")
+        .style("line-height", "1.8");
+
+    const tooltipTitle = tooltip.append("div")
+        .style("font-size", "18px")
+        .style("font-weight", "bold")
+        .style("margin-bottom", "6px");
+
+    // "Film, released 2019"
+    const tooltipType = tooltip.append("div");
+
+    // IMDb score in a yellow badge, then the votes
+    const scoreRow = tooltip.append("div");
+    scoreRow.append("span")
+        .style("color", "#9aa0a6")
+        .text("IMDb: ");
+    const tooltipScore = scoreRow.append("span")
+        .style("color", "#f5c518")
+        .style("background", "rgba(245, 197, 24, 0.15)")
+        .style("padding", "2px 8px")
+        .style("border-radius", "6px")
+        .style("font-weight", "bold");
+    const tooltipVotes = scoreRow.append("span");
+
+    const tooltipRows = tooltip.append("div");
 
     // Visible title whose line is closest to the mouse, max 6px away
     function findClosestTitle(mouseX, mouseY) {
@@ -400,37 +430,37 @@ export function createParallelCoordinates(svgSelector, data, { onFilterChange } 
         return closest;
     }
 
-    function showTooltip(d, mouseX, mouseY) {
-        const textLines = [
-            d.title,
-            `${d.type === "Movie" ? "Film" : "Series"}, released ${d.release_year}`,
-            `IMDb: ${d.imdb_score} (${formatNumber(d.imdb_votes)} votes)`,
-            `Budget: ${formatMoney(d.budget)}`,
-            `Revenue: ${formatMoney(d.revenue)}`,
-            `Duration: ${d.duration_minutes === null ? "no data" : Math.round(d.duration_minutes) + " min"}`,
-            `Cast size: ${d.cast_size || "no data"}`,
-            `Countries: ${d.production_country_count || "no data"}`,
+    function showTooltip(d, event) {
+        tooltipTitle.text(d.title);
+        tooltipType.text(`${d.type === "Movie" ? "Film" : "Series"}, released ${d.release_year}`);
+        tooltipScore.text(d.imdb_score);
+        tooltipVotes.text(` (${formatNumber(d.imdb_votes)} votes)`);
+
+        // Grey label, white value
+        const rows = [
+            ["Budget", formatMoney(d.budget)],
+            ["Revenue", formatMoney(d.revenue)],
+            ["Duration", d.duration_minutes === null ? "no data" : Math.round(d.duration_minutes) + " min"],
+            ["Cast size", d.cast_size || "no data"],
+            ["Countries", d.production_country_count || "no data"],
         ];
+        tooltipRows.selectAll("div")
+            .data(rows)
+            .join("div")
+            .html(([label, value]) => `<span style="color: #9aa0a6">${label}:</span> ${value}`);
 
-        // One line of text per entry, title in bold
-        tooltipText.selectAll("tspan")
-            .data(textLines)
-            .join("tspan")
-            .attr("x", 8)
-            .attr("dy", "1.3em")
-            .style("font-weight", (line, i) => i === 0 ? "bold" : null)
-            .text(line => line);
+        // Show it first, then measure it
+        tooltip.style("display", null);
+        const box = tooltip.node().getBoundingClientRect();
 
-        // Fit the background to the text
-        const box = tooltipText.node().getBBox();
-        tooltipBg.attr("width", box.width + 16).attr("height", box.height + 10);
-
-        // Next to the mouse, flipped left near the right edge
-        const tooltipX = mouseX + box.width + 40 > width ? mouseX - box.width - 30 : mouseX + 15;
-        const tooltipY = Math.min(mouseY, height - box.height - 10);
-        tooltip.attr("transform", `translate(${tooltipX}, ${tooltipY})`)
-            .style("display", null)
-            .raise();
+        // Above right of the mouse, flipped when it would leave the window
+        const left = event.clientX + box.width + 20 > window.innerWidth
+            ? event.clientX - box.width - 15
+            : event.clientX + 15;
+        const top = event.clientY - box.height - 15 < 0
+            ? event.clientY + 15
+            : event.clientY - box.height - 15;
+        tooltip.style("left", `${left}px`).style("top", `${top}px`);
     }
 
     mouseCatcher
@@ -450,7 +480,7 @@ export function createParallelCoordinates(svgSelector, data, { onFilterChange } 
                 .attr("cx", (axis, i) => points[i][0])
                 .attr("cy", (axis, i) => points[i][1]);
             highlight.style("display", null);
-            showTooltip(d, mouseX, mouseY);
+            showTooltip(d, event);
         })
         .on("pointerleave", () => {
             highlight.style("display", "none");
