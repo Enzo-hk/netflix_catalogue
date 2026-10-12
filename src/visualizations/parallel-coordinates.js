@@ -532,7 +532,7 @@ export function createParallelCoordinates(svgSelector, data) {
             .attr("y", 10)
             .style("font-size", "11px")
             .style("fill", "currentColor")
-            .text(type === "Movie" ? "Films" : "Series");
+            .text(type === "Movie" ? "Movie" : "TV Show");
     });
 
     // First draw

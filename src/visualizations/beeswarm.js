@@ -62,6 +62,7 @@ export function createBeeswarm(data) {
         .attr("x", innerWidth / 2)
         .attr("y", innerHeight + 40)
         .attr("text-anchor", "middle")
+        .attr("fill", "#ffffff") // Couleur blanche pour la visibilité
         .text("IMDb score");
 
     // --------------------
@@ -89,6 +90,7 @@ export function createBeeswarm(data) {
             .append("text")
             .attr("x", 12)
             .attr("y", 5)
+            .attr("fill", "#ffffff") // Couleur blanche pour Movie et TV Show
             .text(type);
     });
 

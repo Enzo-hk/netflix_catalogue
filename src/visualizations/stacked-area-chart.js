@@ -51,9 +51,9 @@ export function createStackedAreaChart(svgSelector, data) {
         .nice()
         .range([height, 0]);
 
-    const colorScale = d3.scaleOrdinal()
+const colorScale = d3.scaleOrdinal()
         .domain(keys)
-        .range(["#e50914", "#221f1f"]); // Rouge et Noir/Gris Netflix
+        .range(["#e50914", "#e2e8f0"]);
 
     // 7. Générateur d'aires
     const area = d3.area()
@@ -98,7 +98,7 @@ export function createStackedAreaChart(svgSelector, data) {
             .attr("text-anchor", "start")
             .style("font-size", "12px")
             .style("fill", "currentColor")
-            .text(key === "MOVIE" ? "Films" : "Séries");
+            .text(key === "MOVIE" ? "Movie" : "TV Show");
     });
     addHoverEffect(g, formattedData, xScale, width, height);
 }
@@ -108,7 +108,7 @@ function addHoverEffect(g, formattedData, xScale, width, height) {
     const hoverLine = g.append("line")
         .attr("y1", 0)
         .attr("y2", height)
-        .attr("stroke", "#ccc")
+        .attr("stroke", "#000000")
         .attr("stroke-width", 1)
         .attr("stroke-dasharray", "4 4")
         .style("opacity", 0);
