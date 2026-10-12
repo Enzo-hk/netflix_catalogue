@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { countTitlesByCountry } from "../data/processData.js";
 
-export function createChoropleth(data) {
+export function createChoropleth(data, { onSelectCountry } = {}) {
     console.log("createChoropleth called with", data.length, "titles");
 
     const svg = d3.select("#choropleth"),
@@ -76,6 +76,7 @@ export function createChoropleth(data) {
                 .style("opacity", .8)
                 .on("mouseover", mouseOver)
                 .on("mouseleave", mouseLeave)
+                .on("click", (event, feature) => onSelectCountry?.(feature.properties.name))
 
         })
 

@@ -23,12 +23,10 @@ const TYPE_COLOR = { "Movie": "#3f3f46", "TV Show": "#71717a" };
 const RINGS = 4;          // centre + type + genre + age group =- max de niveaux visibles
 const SIZE = 640; // taille globale du graphique SVG
 const RADIUS = SIZE / (2 * RINGS); //rayon of each anneau (+/- 80 pixels par anneau)
-const MAX_LISTED_TITLES = 50;//si on clique sur un groupe d age , le nb max de titres affiches dans la liste 
 
 //(formattage des valeurs)
 const formatCount = d3.format(",");
 const formatPercent = d3.format(".1%");
-const formatScore = d3.format(".1f");  // the source has float noise such as 8.199999999999998
 
 // ---------------------------------------------------------------------------
 // Transformation : Data table -> hierarchy  
@@ -83,8 +81,6 @@ export function createSunburst(container, titles, { onSelect } = {}) {
         .attr("aria-label", "Sunburst of the Netflix catalogue: type, genre family and age group");
     const legend = chart.append("div").attr("class", "sunburst__legend");
     const tooltip = chart.append("div").attr("class", "sunburst__tooltip").attr("hidden", true);
-    const details = root.append("aside").attr("class", "sunburst__details");
-
     function render(data) {
         svg.selectAll("*").remove();
         const hierarchy = buildHierarchy(data);
@@ -201,42 +197,12 @@ export function createSunburst(container, titles, { onSelect } = {}) {
 
         renderLegend(legend, color(hierarchy.children?.[0]?.children?.[0]?.data[0]));
         setFocus(hierarchy);
-        showDetails(null);
+        onSelect?.(null);
     }
 
     function select(leaf) {
         const [, type, genre, age] = pathOf(leaf);
-        showDetails({ type, genre, age, titles: leaf.titles });
         onSelect?.({ type, genre, age, titles: leaf.titles });
-    }
-
-    function showDetails(selection) {
-        details.selectAll("*").remove();
-        if (!selection) {
-            details.append("p").attr("class", "sunburst__hint")
-                .text("Click an age group (outer ring) to list its titles. Click a genre or a type to zoom in, and the centre to zoom out.");
-            return;
-        }
-        const { type, genre, age, titles: selected } = selection;
-        const sorted = [...selected].sort((a, b) =>
-            d3.descending(a.imdb_score ?? -1, b.imdb_score ?? -1) || d3.ascending(a.title, b.title));
-
-        details.append("h3").text(`${genre} · ${age}`);
-        details.append("p").attr("class", "sunburst__subtitle")
-            .text(`${type} · ${formatCount(selected.length)} titles, best rated first`);
-        const list = details.append("ol").attr("class", "sunburst__list");
-        const item = list.selectAll("li").data(sorted.slice(0, MAX_LISTED_TITLES)).join("li");
-        item.append("span").attr("class", "sunburst__title").text((t) => t.title);
-        item.append("span").attr("class", "sunburst__meta").text((t) => [
-            t.release_year,
-            t.duration_minutes ? `${t.duration_minutes} min` : t.seasons ? `${t.seasons} season${t.seasons > 1 ? "s" : ""}` : null,
-            t.imdb_score != null ? `IMDb ${formatScore(t.imdb_score)}` : null,
-        ].filter(Boolean).join(" · "));
-        item.attr("title", (t) => t.description);
-        if (sorted.length > MAX_LISTED_TITLES) {
-            details.append("p").attr("class", "sunburst__more")
-                .text(`+ ${formatCount(sorted.length - MAX_LISTED_TITLES)} more titles`);
-        }
     }
 
     render(titles);

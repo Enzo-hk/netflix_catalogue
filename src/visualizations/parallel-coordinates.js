@@ -66,7 +66,7 @@ function formatMoney(value) {
 }
 
 // Called from main.js
-export function createParallelCoordinates(svgSelector, data) {
+export function createParallelCoordinates(svgSelector, data, { onFilterChange } = {}) {
 
     // 1. Clear the SVG
     const svg = d3.select(svgSelector);
@@ -189,6 +189,7 @@ export function createParallelCoordinates(svgSelector, data) {
             paintLines(visibleTitles, OPACITY_SELECTED);
         }
         updateFilterInfo();
+        onFilterChange?.(visibleTitles);
     }
 
     // Layer between the canvas and the axes, used by the hover code

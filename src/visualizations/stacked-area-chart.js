@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-export function createStackedAreaChart(svgSelector, data) {
+export function createStackedAreaChart(svgSelector, data, { onSelectYear } = {}) {
     // 1. Sélectionner le SVG existant et le vider
     const svg = d3.select(svgSelector);
     svg.selectAll("*").remove();
@@ -100,10 +100,10 @@ const colorScale = d3.scaleOrdinal()
             .style("fill", "currentColor")
             .text(key === "MOVIE" ? "Movie" : "TV Show");
     });
-    addHoverEffect(g, formattedData, xScale, width, height);
+    addHoverEffect(g, formattedData, xScale, width, height, onSelectYear);
 }
 
-function addHoverEffect(g, formattedData, xScale, width, height) {
+function addHoverEffect(g, formattedData, xScale, width, height, onSelectYear) {
     // Ligne verticale de repère
     const hoverLine = g.append("line")
         .attr("y1", 0)
@@ -185,6 +185,11 @@ function addHoverEffect(g, formattedData, xScale, width, height) {
                 .attr("y", 0)
                 .attr("width", 130)
                 .attr("height", 55);
+        })
+        .on("click", function(event) {
+            const [mouseX] = d3.pointer(event);
+            const index = bisectYear(formattedData, xScale.invert(mouseX));
+            if (formattedData[index]) onSelectYear?.(formattedData[index].year);
         })
         .on("pointerleave", function() {
             hoverLine.style("opacity", 0);

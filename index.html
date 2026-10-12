@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="src/styles/style.css">
   <link rel="stylesheet" href="src/styles/beeswarm.css">
   <link rel="stylesheet" href="/src/styles/sunburst.css">
+  <link rel="stylesheet" href="/src/styles/tab-list.css">
   <!-- you can add other stylesheets here if you want -->
 </head>
 
@@ -59,35 +60,50 @@
         <output id="beeswarm-result-count" aria-live="polite"></output>
       </div>
 
-      <div class="chart-container">
-        <svg id="beeswarm"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="beeswarm"></svg>
+        </div>
+        <div id="tabs-beeswarm"></div>
       </div>
 
       <div id="beeswarm-tooltip" class="tooltip"></div>
     </section>
     <section class="visualization" id="section-stacked">
       <h2>Stacked Area Chart</h2>
-      <div class="chart-container">
-        <svg id="stacked-area-chart"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="stacked-area-chart"></svg>
+        </div>
+        <div id="tabs-stacked"></div>
       </div>
     </section>
     <section class="visualization" id="section-choropleth">
       <h2>Choropleth</h2>
 
-      <div class="chart-container">
-        <svg id="choropleth" width="1000" height="700"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="choropleth" width="1000" height="700"></svg>
+        </div>
+        <div id="tabs-choropleth"></div>
       </div>
     </section>
     <section class="visualization" id="section-parallel">
       <h2>Parallel Coordinates</h2>
-      <div class="chart-container">
-        <svg id="parallel-coordinates"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="parallel-coordinates"></svg>
+        </div>
+        <div id="tabs-parallel"></div>
       </div>
     </section>
     <section class="visualization" id="section-sunburst">
       <h2>Sunburst</h2>
-      <div class="chart-container">
-        <div id="sunburst"></div>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <div id="sunburst"></div>
+        </div>
+        <div id="tabs-sunburst"></div>
       </div>
     </section>
 

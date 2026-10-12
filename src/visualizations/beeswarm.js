@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-export function createBeeswarm(data) {
+export function createBeeswarm(data, { onSelect } = {}) {
 
     const svg = d3.select("#beeswarm");
     const searchInput = d3.select("#person-search");
@@ -267,6 +267,6 @@ export function createBeeswarm(data) {
                 .style("display", "none");
         })
         .on("click", (event, d) => {
-            console.log("Selected title:", d); // replace this by a function to open the network or some
+            onSelect?.(d);
         });
 }
