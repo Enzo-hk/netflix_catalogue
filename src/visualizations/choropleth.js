@@ -144,6 +144,7 @@ export function createChoropleth(data, { selectedCountry = "", onSelectCountry }
                 if (!onSelectCountry || !d.total) return;
                 const name = toNetflixCountryName(d.properties.name);
                 onSelectCountry(name === selectedCountry ? "" : name);
+                if (onFilterChange) onFilterChange();
             }
 
             // Draw the choropleth map
@@ -174,7 +175,7 @@ export function createChoropleth(data, { selectedCountry = "", onSelectCountry }
                 .on("mouseleave", mouseLeave)
                 .on("click", click);
 
-                drawLegend(svg, colorScale, width / 2 + 50, height - 40);
+            drawLegend(svg, colorScale, width / 2 + 50, height - 40);
         })
 
 }

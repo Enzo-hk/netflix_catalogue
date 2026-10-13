@@ -9,6 +9,7 @@ import { createParallelCoordinates } from "./visualizations/parallel-coordinates
 import { createSunburst } from "./visualizations/sunburst.js";
 import { applyFilters, createFilterState } from "./data/filters.js";
 import { createFilterPanel } from "./components/filter-panel.js";
+import { createTabList } from "./components/tab-list.js";
 
 async function main() {
     const data = await loadNetflixData();
@@ -18,6 +19,7 @@ async function main() {
     // Coordinated views: one shared filter state, every view shows the same subset of titles
     const filters = createFilterState();
     createFilterPanel("#filter-panel", data, filters);
+    const tabLists = setupTabLists();
 
     // Every view can also SET the common filters it shows, and the filters accumulate:
     //   map: country · sunburst: type, genre, age group · stacked chart: years (brush), type (legend)
@@ -34,6 +36,7 @@ async function main() {
             });
             filters.set(patch);
         },
+        onSelect: (selection) => showCatalogueSelection(tabLists.sunburst, selection),
     });
 
     function renderViews(current) {
@@ -62,20 +65,29 @@ async function main() {
 
         // one view failing (e.g. no title left) must not stop the others
         const views = {
-            beeswarm: () => createBeeswarm(titles, { selectedType: current.type, onSelectType: setType }),
+            beeswarm: () => createBeeswarm(titles, {
+                selectedType: current.type,
+                onSelectType: setType,
+                onSelect: (title) => showTitle(tabLists.beeswarm, title),
+            }),
             stacked: () => createStackedAreaChart("#stacked-area-chart", stackedTitles, {
                 yearRange: [current.yearFrom, current.yearTo],
                 onSelectYears: (yearFrom, yearTo) => filters.set({ yearFrom, yearTo }),
                 selectedType: current.type,
                 onSelectType: setType,
+                onSelectYear: (year) => showYear(tabLists.stacked, data, year),
             }),
             choropleth: () => createChoropleth(mapTitles, {
                 selectedCountry: current.country,
-                onSelectCountry: (country) => filters.set({ country }),
+                onSelectCountry: (country) => {
+                    filters.set({ country });
+                    showCountry(tabLists.choropleth, data, country);
+                },
             }),
             parallel: () => createParallelCoordinates("#parallel-coordinates", titles, {
                 selectedType: current.type,
                 onSelectType: setType,
+                onFilterChange: (visibleTitles) => showTypeTabs(tabLists.parallel, visibleTitles),
             }),
             sunburst: () => sunburst.update(sunburstTitles, { focus }),
         };
@@ -90,6 +102,167 @@ async function main() {
 
     renderViews(filters.get());
     filters.on("views", renderViews);
+}
+
+function setupTabLists() {
+    const visualizations = [
+        ["beeswarm", "Beeswarm tabs"],
+        ["stacked", "Stacked area chart tabs"],
+        ["choropleth", "Choropleth tabs"],
+        ["parallel", "Parallel coordinates tabs"],
+        ["sunburst", "Sunburst tabs"]
+    ];
+    return Object.fromEntries(visualizations.map(([key, label]) => {
+        const containerId = `tabs-${key}`;
+        const container = document.getElementById(containerId);
+        return [key, createTabList(container, { label })];
+    }));
+}
+
+function renderTitleList(panel, titles, {
+    heading,
+    description,
+    collapsibleDescriptions = true
+} = {}) {
+    panel.replaceChildren();
+    if (heading) {
+        const title = document.createElement("h3");
+        title.textContent = heading;
+        panel.append(title);
+    }
+    if (description) {
+        const text = document.createElement("p");
+        text.textContent = description;
+        panel.append(text);
+    }
+    const list = document.createElement("ol");
+    titles.forEach((title) => {
+        const item = document.createElement("li");
+        const titleLabel = document.createElement("span");
+        titleLabel.textContent = title.title;
+        item.append(titleLabel);
+
+        const meta = document.createElement("span");
+        meta.className = "tab-list__meta";
+        meta.textContent = formatTitleMetadata(title);
+        item.append(meta);
+
+        if (title.description) {
+            const titleDescription = document.createElement("span");
+            titleDescription.className = "tab-list__description";
+            titleDescription.textContent = title.description;
+            item.append(titleDescription);
+
+            if (collapsibleDescriptions) {
+                titleDescription.classList.add("tab-list__description--collapsed");
+                const toggle = document.createElement("button");
+                toggle.type = "button";
+                toggle.className = "tab-list__description-toggle";
+                toggle.textContent = "Afficher plus";
+                toggle.setAttribute("aria-expanded", "false");
+                toggle.addEventListener("click", () => {
+                    const isExpanded = toggle.getAttribute("aria-expanded") === "true";
+                    titleDescription.classList.toggle("tab-list__description--collapsed", isExpanded);
+                    toggle.setAttribute("aria-expanded", String(!isExpanded));
+                    toggle.textContent = isExpanded ? "Afficher plus" : "Réduire";
+                });
+                item.append(toggle);
+            }
+        }
+        list.append(item);
+    });
+    panel.append(list);
+}
+
+function formatTitleMetadata(title) {
+    const year = title.release_year ?? "Année inconnue";
+    const duration = title.duration_minutes
+        ? `${title.duration_minutes} min`
+        : title.seasons
+            ? `${title.seasons} saison${title.seasons > 1 ? "s" : ""}`
+            : "Durée inconnue";
+    const score = title.imdb_score != null
+        ? `IMDb ${Number(title.imdb_score).toFixed(1)}`
+        : "IMDb N/A";
+    return `${year} · ${duration} · ${score}`;
+}
+
+function showTitle(tabList, title) {
+    tabList.setTabs([{
+        id: "description",
+        label: "Description",
+        render: (panel) => {
+            const heading = document.createElement("h3");
+            heading.textContent = title.title;
+            const metadata = document.createElement("p");
+            metadata.className = "tab-list__meta";
+            metadata.textContent = formatTitleMetadata(title);
+            const description = document.createElement("p");
+            description.textContent = title.description || "Description indisponible.";
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "tab-list__description-toggle";
+            toggle.textContent = "Afficher plus";
+            toggle.setAttribute("aria-expanded", "false");
+
+            const descriptionIsLong = description.textContent.length > 180;
+            if (descriptionIsLong) {
+                description.className = "tab-list__description tab-list__description--collapsed";
+                toggle.addEventListener("click", () => {
+                    const isExpanded = toggle.getAttribute("aria-expanded") === "true";
+                    description.classList.toggle("tab-list__description--collapsed", isExpanded);
+                    toggle.setAttribute("aria-expanded", String(!isExpanded));
+                    toggle.textContent = isExpanded ? "Afficher plus" : "Réduire";
+                });
+            } else {
+                toggle.hidden = true;
+            }
+
+            panel.replaceChildren(heading, metadata, description, toggle);
+        }
+    }]);
+}
+
+function showYear(tabList, data, year) {
+    const titles = data.filter((title) => Number(title.release_year) === year);
+    showTypeTabs(tabList, titles, {
+        heading: `Sorties de ${year}`,
+        description: `${titles.length} titre(s)`
+    });
+}
+
+function showCountry(tabList, data, country) {
+    const aliases = { USA: "United States", England: "United Kingdom", "Republic of Serbia": "Serbia", "United Republic of Tanzania": "Tanzania" };
+    const sourceCountry = aliases[country] ?? country;
+    const titles = data.filter((title) => title.countries.includes(sourceCountry));
+    showTypeTabs(tabList, titles, {
+        heading: country,
+        description: `${titles.length} titre(s)`
+    });
+}
+
+function showTypeTabs(tabList, titles, options = {}) {
+    tabList.setTabs(["Movie", "TV Show"].map((type) => ({
+        id: type.toLowerCase().replace(" ", "-"),
+        label: type === "Movie" ? "Movie" : "TV Show",
+        render: (panel) => renderTitleList(panel, titles.filter((title) => title.type === type), {
+            ...options,
+            heading: options.heading ?? type,
+            description: options.description ?? ""
+        })
+    })));
+}
+
+function showCatalogueSelection(tabList, selection) {
+    if (!selection) return;
+    tabList.setTabs([{
+        id: "catalogue-titles",
+        label: "Titles",
+        render: (panel) => renderTitleList(panel, selection.titles, {
+            heading: `${selection.genre} · ${selection.age}`,
+            description: `${selection.type} · ${selection.titles.length} titles`
+        })
+    }]);
 }
 
 function setupVisualizationToggles() {

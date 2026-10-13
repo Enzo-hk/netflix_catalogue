@@ -3,7 +3,7 @@ import * as d3 from "d3";
 // Shared filters (coordinated views), all optional:
 //   yearRange: [from, to] shown as a brush selection, onSelectYears(from, to) when the user brushes a period
 //   selectedType: "Movie" | "TV Show" | "", onSelectType(type) when a legend item is clicked
-export function createStackedAreaChart(svgSelector, data, { yearRange = [null, null], onSelectYears, selectedType = "", onSelectType } = {}) {
+export function createStackedAreaChart(svgSelector, data, { yearRange = [null, null], onSelectYears, onSelectYear, selectedType = "", onSelectType } = {}) {
     // 1. Sélectionner le SVG existant et le vider
     const svg = d3.select(svgSelector);
     svg.selectAll("*").remove();
@@ -108,7 +108,7 @@ const colorScale = d3.scaleOrdinal()
             .style("fill", "currentColor")
             .text(key === "MOVIE" ? "Movie" : "TV Show");
     });
-    addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears });
+    addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears, onSelectYear });
 }
 
 // Brush on the x axis -> shared year filter. Returns the brush group, which also receives the hover events.
@@ -135,7 +135,7 @@ function addYearBrush(g, xScale, width, height, yearRange, onSelectYears) {
     return brushGroup;
 }
 
-function addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears } = {}) {
+function addHoverEffect(g, formattedData, xScale, width, height, { yearRange, onSelectYears, onSelectYear } = {}) {
     // Ligne verticale de repère
     const hoverLine = g.append("line")
         .attr("y1", 0)
@@ -223,7 +223,12 @@ function addHoverEffect(g, formattedData, xScale, width, height, { yearRange, on
                 .attr("width", 130)
                 .attr("height", 55);
         })
-        .on("pointerleave.hover", function() {
+        .on("click", function(event) {
+            const [mouseX] = d3.pointer(event);
+            const index = bisectYear(formattedData, xScale.invert(mouseX));
+            if (formattedData[index]) onSelectYear?.(formattedData[index].year);
+        })
+        .on("pointerleave", function() {
             hoverLine.style("opacity", 0);
             tooltipGroup.style("opacity", 0);
         });

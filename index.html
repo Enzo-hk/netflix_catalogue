@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/src/styles/sunburst.css">
 <link rel="stylesheet" href="/src/styles/title-card.css">
 <link rel="stylesheet" href="/src/styles/filters.css">
+  <link rel="stylesheet" href="/src/styles/tab-list.css">
   <!-- you can add other stylesheets here if you want -->
 </head>
 
@@ -65,8 +66,11 @@
         <output id="beeswarm-result-count" aria-live="polite"></output>
       </div>
 
-      <div class="chart-container">
-        <svg id="beeswarm"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="beeswarm"></svg>
+        </div>
+        <div id="tabs-beeswarm"></div>
       </div>
 
       <div id="beeswarm-tooltip" class="tooltip"></div>
@@ -74,30 +78,42 @@
     <section class="visualization" id="section-stacked">
       <h2>Stacked Area Chart</h2>
       <p class="view-hint"><strong>Drag</strong> across the chart to filter all the views by release years (click outside the selection to remove it). Click <strong>Movie</strong> or <strong>TV Show</strong> in the legend to filter by type.</p>
-      <div class="chart-container">
-        <svg id="stacked-area-chart"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="stacked-area-chart"></svg>
+        </div>
+        <div id="tabs-stacked"></div>
       </div>
     </section>
     <section class="visualization" id="section-choropleth">
       <h2>Choropleth</h2>
       <p class="view-hint"><strong>Click a country</strong> to filter all the views by country (click it again to remove the filter).</p>
 
-      <div class="chart-container">
-        <svg id="choropleth" width="1000" height="700"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="choropleth" width="1000" height="700"></svg>
+        </div>
+        <div id="tabs-choropleth"></div>
       </div>
     </section>
     <section class="visualization" id="section-parallel">
       <h2>Parallel Coordinates</h2>
       <p class="view-hint">Click <strong>Movie</strong> or <strong>TV Show</strong> in the legend to filter all the views by type. Dragging on an axis only filters this chart.</p>
-      <div class="chart-container">
-        <svg id="parallel-coordinates"></svg>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <svg id="parallel-coordinates"></svg>
+        </div>
+        <div id="tabs-parallel"></div>
       </div>
     </section>
     <section class="visualization" id="section-sunburst">
       <h2>Sunburst</h2>
       <p class="view-hint"><strong>Click an arc</strong> to zoom in and filter all the views by type, genre and audience. Click the centre to zoom out.</p>
-      <div class="chart-container">
-        <div id="sunburst"></div>
+      <div class="visualization-content">
+        <div class="chart-container">
+          <div id="sunburst"></div>
+        </div>
+        <div id="tabs-sunburst"></div>
       </div>
     </section>
 

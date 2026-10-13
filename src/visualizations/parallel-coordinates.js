@@ -67,7 +67,8 @@ function formatMoney(value) {
 
 // Called from main.js
 // Shared filters (coordinated views), optional: selectedType + onSelectType(type) when a legend item is clicked
-export function createParallelCoordinates(svgSelector, data, { selectedType = "", onSelectType } = {}) {
+export function createParallelCoordinates(svgSelector, data, { selectedType = "", onSelectType ,onFilterChange } = {}) {
+
 
     // 1. Clear the SVG
     const svg = d3.select(svgSelector);
@@ -190,6 +191,7 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
             paintLines(visibleTitles, OPACITY_SELECTED);
         }
         updateFilterInfo();
+        onFilterChange?.(visibleTitles);
     }
 
     // Layer between the canvas and the axes, used by the hover code

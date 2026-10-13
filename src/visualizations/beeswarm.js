@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 // Shared filters (coordinated views), optional: selectedType + onSelectType(type) when a legend item is clicked
-export function createBeeswarm(data, { selectedType = "", onSelectType } = {}) {
+export function createBeeswarm(data, { selectedType = "", onSelectType, onSelect } = {}) {
 
     const svg = d3.select("#beeswarm");
     svg.selectAll("*").remove(); // redrawn when the shared filters change
@@ -273,6 +273,6 @@ export function createBeeswarm(data, { selectedType = "", onSelectType } = {}) {
                 .style("display", "none");
         })
         .on("click", (event, d) => {
-            console.log("Selected title:", d); // replace this by a function to open the network or some
+            onSelect?.(d);
         });
 }

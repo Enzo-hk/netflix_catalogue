@@ -29,7 +29,6 @@ const MAX_LISTED_TITLES = 50;//si on clique sur un groupe d age , le nb max de t
 //(formattage des valeurs)
 const formatCount = d3.format(",");
 const formatPercent = d3.format(".1%");
-const formatScore = d3.format(".1f");  // the source has float noise such as 8.199999999999998
 
 // ---------------------------------------------------------------------------
 // Transformation : Data table -> hierarchy  
@@ -91,9 +90,9 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
         .attr("role", "img")
         .attr("aria-label", "Sunburst of the Netflix catalogue: type, genre family and age group");
     const legend = chart.append("div").attr("class", "sunburst__legend");
-    const details = root.append("aside").attr("class", "sunburst__details");
     const titleCard = createTitleCard(); // s'affiche au survol d'un titre de la liste
 
+    const tooltip = chart.append("div").attr("class", "sunburst__tooltip").attr("hidden", true);
     function render(data) {
         svg.selectAll("*").remove();
         selectedLeafPath = null;
@@ -184,7 +183,6 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
             if (!silent) {
                 // clic de l'utilisateur -> filtres partages (zoomer en arriere retire les niveaux du dessous)
                 selectedLeafPath = null;
-                showDetails(null);
                 onFocusChange?.(pathOf(focus).slice(1), { zoomOut });
             }
         }
@@ -222,7 +220,7 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
 
         renderLegend(legend, color(hierarchy.children?.[0]?.children?.[0]?.data[0]));
         setFocus(hierarchy);
-        showDetails(null);
+        onSelect?.(null);
 
         view.hierarchy = hierarchy;
         view.zoom = zoom;
@@ -234,13 +232,11 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
         const fullPath = pathOf(leaf);
         if (!silent && selectedLeafPath === fullPath.join("|")) {
             selectedLeafPath = null;
-            showDetails(null);
             onFocusChange?.(fullPath.slice(1, -1), { zoomOut: true });
             return;
         }
         selectedLeafPath = fullPath.join("|");
         const [, type, genre, age] = fullPath;
-        showDetails({ type, genre, age, titles: leaf.titles });
         onSelect?.({ type, genre, age, titles: leaf.titles });
         if (!silent) onFocusChange?.(fullPath.slice(1), { zoomOut: false });
     }
@@ -260,7 +256,7 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
             if (selectedLeafPath !== pathOf(node).join("|")) select(node, { silent: true });
         } else if (selectedLeafPath) {
             selectedLeafPath = null;
-            showDetails(null);
+            onSelect?.(null);
         }
     }
 
@@ -274,39 +270,6 @@ export function createSunburst(container, titles, { onSelect, onFocusChange } = 
         }
         applyFocus(focus, changed ? 0 : 750);
     }
-
-    function showDetails(selection) {
-        details.selectAll("*").remove();
-        if (!selection) {
-            details.append("p").attr("class", "sunburst__hint")
-                .text("Click an age group (outer ring) to list its titles. Click a genre or a type to zoom in, and the centre to zoom out.");
-            return;
-        }
-        const { type, genre, age, titles: selected } = selection;
-        const sorted = [...selected].sort((a, b) =>
-            d3.descending(a.imdb_score ?? -1, b.imdb_score ?? -1) || d3.ascending(a.title, b.title));
-
-        details.append("h3").text(`${genre} · ${age}`);
-        details.append("p").attr("class", "sunburst__subtitle")
-            .text(`${type} · ${formatCount(selected.length)} titles, best rated first`);
-        const list = details.append("ol").attr("class", "sunburst__list");
-        const item = list.selectAll("li").data(sorted.slice(0, MAX_LISTED_TITLES)).join("li");
-        item.append("span").attr("class", "sunburst__title").text((t) => t.title);
-        item.append("span").attr("class", "sunburst__meta").text((t) => [
-            t.release_year,
-            t.duration_minutes ? `${t.duration_minutes} min` : t.seasons ? `${t.seasons} season${t.seasons > 1 ? "s" : ""}` : null,
-            t.imdb_score != null ? `IMDb ${formatScore(t.imdb_score)}` : null,
-        ].filter(Boolean).join(" · "));
-        // survol d'un titre -> meme carte que dans les autres visualisations
-        item.on("mouseenter", (event, t) => titleCard.show(event, t))
-            .on("mousemove", (event) => titleCard.move(event))
-            .on("mouseleave", () => titleCard.hide());
-        if (sorted.length > MAX_LISTED_TITLES) {
-            details.append("p").attr("class", "sunburst__more")
-                .text(`+ ${formatCount(sorted.length - MAX_LISTED_TITLES)} more titles`);
-        }
-    }
-
     update(titles);
     return { update };
 }
