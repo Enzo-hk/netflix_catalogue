@@ -1,7 +1,9 @@
 // Example of how we could use the other files to organize the code (this is just an example,
 // you can change it if you want):
 
-import { loadNetflixData } from "./data/loadData.js";
+import { importCatalogue, loadNetflixData } from "./data/loadData.js";
+import { mergeTitles } from "./data/pipeline.js";
+import { createDatasetPanel } from "./components/dataset-panel.js";
 import { createBeeswarm } from "./visualizations/beeswarm.js";
 import { createStackedAreaChart } from "./visualizations/stacked-area-chart.js";
 import { createChoropleth } from "./visualizations/choropleth.js";
@@ -12,7 +14,9 @@ import { createFilterPanel } from "./components/filter-panel.js";
 import { createTabList } from "./components/tab-list.js";
 
 async function main() {
-    const data = await loadNetflixData();
+    // `data` can be replaced when the user imports another dataset (see the dataset panel below)
+    const defaultData = await loadNetflixData();
+    let data = defaultData;
     setupVisualizationToggles();
     console.log("Data loaded:", data);
 
@@ -102,6 +106,39 @@ async function main() {
 
     renderViews(filters.get());
     filters.on("views", renderViews);
+
+    // Change of dataset: the imported CSV goes through the data pipeline (src/data/pipeline.js),
+    // then the filters are reset and every view is redrawn with the new titles.
+    const DEFAULT_NAME = "Netflix (default)";
+    let datasetName = DEFAULT_NAME;
+
+    function setData(titles, name) {
+        data = titles;
+        datasetName = name;
+        createFilterPanel("#filter-panel", data, filters); // its menus (countries, genres, years) come from the data
+        Object.values(tabLists).forEach((tabList) => tabList.setTabs([]));
+        filters.reset(); // -> renderViews with the new data
+    }
+
+    createDatasetPanel("#dataset-panel", {
+        name: DEFAULT_NAME,
+        count: data.length,
+        onImport: async (file, mode) => {
+            const { titles, report } = await importCatalogue(file);
+            if (!titles.length) throw new Error("no valid title in this file");
+            if (mode === "update") {
+                const { titles: merged, added, updated } = mergeTitles(data, titles);
+                setData(merged, `${datasetName} + ${file.name}`);
+                return { name: datasetName, count: merged.length, report, added, updated };
+            }
+            setData(titles, file.name);
+            return { name: datasetName, count: titles.length, report };
+        },
+        onReset: () => {
+            setData(defaultData, DEFAULT_NAME);
+            return { name: DEFAULT_NAME, count: data.length };
+        },
+    });
 }
 
 function setupTabLists() {
