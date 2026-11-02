@@ -8,3 +8,7 @@ import * as d3 from "d3";
 export async function loadNetflixData() {
     return d3.json("/data/preprocessed/titles.json");
 }
+
+export async function loadPersonNetwork() {
+    return d3.json("/data/preprocessed/network.json");
+}

@@ -1,7 +1,7 @@
 // Example of how we could use the other files to organize the code (this is just an example,
 // you can change it if you want):
 
-import { loadNetflixData } from "./data/loadData.js";
+import { loadNetflixData, loadPersonNetwork } from "./data/loadData.js";
 import { createBeeswarm } from "./visualizations/beeswarm.js";
 import { createStackedAreaChart } from "./visualizations/stacked-area-chart.js";
 import { createChoropleth } from "./visualizations/choropleth.js";
@@ -10,15 +10,17 @@ import { createSunburst } from "./visualizations/sunburst.js";
 import { applyFilters, createFilterState } from "./data/filters.js";
 import { createFilterPanel } from "./components/filter-panel.js";
 import { createTabList } from "./components/tab-list.js";
+import { createNetworkExplorer } from "./components/network-explorer.js";
 
 async function main() {
-    const data = await loadNetflixData();
+    const [data, network] = await Promise.all([loadNetflixData(), loadPersonNetwork()]);
     setupVisualizationToggles();
     console.log("Data loaded:", data);
 
     // Coordinated views: one shared filter state, every view shows the same subset of titles
     const filters = createFilterState();
     createFilterPanel("#filter-panel", data, filters);
+    createNetworkExplorer(network, data, filters);
     const tabLists = setupTabLists();
 
     // Every view can also SET the common filters it shows, and the filters accumulate:
@@ -271,12 +273,14 @@ function setupVisualizationToggles() {
     const choroplethCheckbox = document.getElementById("toggle-choropleth");
     const parallelCheckbox = document.getElementById("toggle-parallel");
     const sunburstCheckbox = document.getElementById("toggle-sunburst");
+    const networkCheckbox = document.getElementById("toggle-network");
 
     const beeswarmSection = document.getElementById("section-beeswarm");
     const stackedSection = document.getElementById("section-stacked");
     const choroplethSection = document.getElementById("section-choropleth");
     const parallelSection = document.getElementById("section-parallel");
     const sunburstSection = document.getElementById("section-sunburst");
+    const networkSection = document.getElementById("section-network");
 
     beeswarmCheckbox.addEventListener("change", (e) => {
         beeswarmSection.classList.toggle("is-hidden", !e.target.checked);
@@ -296,6 +300,10 @@ function setupVisualizationToggles() {
 
     sunburstCheckbox.addEventListener("change", (e) => {
         sunburstSection.classList.toggle("is-hidden", !e.target.checked);
+    });
+
+    networkCheckbox.addEventListener("change", (e) => {
+        networkSection.classList.toggle("is-hidden", !e.target.checked);
     });
 }
 

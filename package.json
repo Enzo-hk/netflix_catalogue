@@ -7,6 +7,7 @@
     "preprocess": "node scripts/preprocess.js && node scripts/preprocess-network.js",
     "predev": "npm run preprocess",
     "dev": "vite",
+    "prebuild": "npm run preprocess",
     "build": "vite build",
     "preview": "vite preview"
   },
