@@ -89,6 +89,79 @@
   font-style: italic;
 }
 
+/* Dataset panel (src/components/dataset-panel.js) */
+.dataset-panel {
+  margin-bottom: 16px;
+  padding: 12px 20px;
+  background-color: #181818;
+  border: 1px solid #282828;
+  border-radius: 8px;
+}
+
+.dataset-panel__current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  color: #e5e5e5;
+}
+
+.dataset-panel__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dataset-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dataset-panel__button {
+  padding: 6px 12px;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  background-color: #222222;
+  color: #f4eded;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dataset-panel__button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.dataset-panel__button:hover:not(:disabled) {
+  border-color: #e50914;
+  color: #ffffff;
+}
+
+.dataset-panel__status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #e5e5e5;
+}
+
+.dataset-panel__status:empty {
+  display: none;
+}
+
+.dataset-panel__status.is-error {
+  color: #ff6b6b;
+}
+
+.dataset-panel__help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8a8a8a;
+}
+
 /* Help sentence under the title of each visualisation */
 .view-hint {
   margin: -8px 0 12px;
