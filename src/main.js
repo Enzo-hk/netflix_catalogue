@@ -79,13 +79,13 @@ async function main() {
                 onSelectYears: (yearFrom, yearTo) => filters.set({ yearFrom, yearTo }),
                 selectedType: current.type,
                 onSelectType: setType,
-                onSelectYear: (year) => showYear(tabLists.stacked, data, year),
+                onSelectYear: (year) => showYear(tabLists.stacked, stackedTitles, year),
             }),
             choropleth: () => createChoropleth(mapTitles, {
                 selectedCountry: current.country,
                 onSelectCountry: (country) => {
                     filters.set({ country });
-                    showCountry(tabLists.choropleth, data, country);
+                    showCountry(tabLists.choropleth, mapTitles, country);
                 },
             }),
             parallel: () => createParallelCoordinates("#parallel-coordinates", titles, {
@@ -282,11 +282,14 @@ function showTypeTabs(tabList, titles, options = {}) {
     tabList.setTabs(["Movie", "TV Show"].map((type) => ({
         id: type.toLowerCase().replace(" ", "-"),
         label: type === "Movie" ? "Movie" : "TV Show",
-        render: (panel) => renderTitleList(panel, titles.filter((title) => title.type === type), {
-            ...options,
-            heading: options.heading ?? type,
-            description: options.description ?? ""
-        })
+        render: (panel) => {
+            const typeTitles = titles.filter((title) => title.type === type);
+            renderTitleList(panel, typeTitles, {
+                ...options,
+                heading: options.heading ?? type,
+                description: `${typeTitles.length} titre(s)`
+            });
+        }
     })));
 }
 
