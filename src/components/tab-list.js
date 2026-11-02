@@ -1,4 +1,5 @@
-export function createTabList(container, { label = "Visualization tabs" } = {}) {
+// onClose(): optional, called after the ✕ button empties the panel (e.g. to deselect what filled it)
+export function createTabList(container, { label = "Visualization tabs", onClose } = {}) {
     container.replaceChildren();
 
     const tabList = document.createElement("div");
@@ -17,6 +18,17 @@ export function createTabList(container, { label = "Visualization tabs" } = {}) 
 
     tabList.append(tabs, panel);
     container.append(tabList);
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "tab-list__close";
+    closeButton.textContent = "✕";
+    closeButton.title = "Close";
+    closeButton.setAttribute("aria-label", "Close details");
+    closeButton.addEventListener("click", () => {
+        setTabs([]);
+        onClose?.();
+    });
 
     function setTabs(definitions, activeId = definitions[0]?.id) {
         tabs.replaceChildren();
@@ -40,6 +52,7 @@ export function createTabList(container, { label = "Visualization tabs" } = {}) 
             });
             tabs.append(button);
         });
+        tabs.append(closeButton);
 
         const activeDefinition = definitions.find(({ id }) => id === activeId) ?? definitions[0];
         panel.id = `${activeDefinition.id}-panel`;

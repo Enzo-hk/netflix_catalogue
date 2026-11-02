@@ -24,7 +24,7 @@ async function main() {
     // Coordinated views: one shared filter state, every view shows the same subset of titles
     const filters = createFilterState();
     createFilterPanel("#filter-panel", data, filters);
-    const tabLists = setupTabLists();
+    const tabLists = setupTabLists(filters);
     const networkExplorer = createNetworkExplorer(network, data, filters, {
         onPersonChange: (person, filteredTitles) => showPerson(tabLists.network, person, filteredTitles),
     });
@@ -49,6 +49,10 @@ async function main() {
 
     function renderViews(current) {
         const titles = applyFilters(data, current);
+
+        // The map panel follows the country filter: no country selected → back to the placeholder
+        // (covers a second click on the country, Reset filters, removing the chip, "All countries")
+        if (!current.country) tabLists.choropleth.setTabs([]);
 
         // A view that sets a filter by selecting inside it is not filtered by that filter:
         // it keeps the other choices visible and highlights the selected one.
@@ -80,7 +84,11 @@ async function main() {
             }),
             stacked: () => createStackedAreaChart("#stacked-area-chart", stackedTitles, {
                 yearRange: [current.yearFrom, current.yearTo],
-                onSelectYears: (yearFrom, yearTo) => filters.set({ yearFrom, yearTo }),
+                onSelectYears: (yearFrom, yearTo) => {
+                    filters.set({ yearFrom, yearTo });
+                    if (yearFrom == null && yearTo == null) tabLists.stacked.setTabs([]);
+                    else showYearRange(tabLists.stacked, stackedTitles, yearFrom, yearTo);
+                },
                 selectedType: current.type,
                 onSelectType: setType,
                 onSelectYear: (year) => showYear(tabLists.stacked, stackedTitles, year),
@@ -89,7 +97,7 @@ async function main() {
                 selectedCountry: current.country,
                 onSelectCountry: (country) => {
                     filters.set({ country });
-                    showCountry(tabLists.choropleth, mapTitles, country);
+                    if (country) showCountry(tabLists.choropleth, mapTitles, country);
                 },
             }),
             parallel: () => createParallelCoordinates("#parallel-coordinates", titles, {
@@ -147,19 +155,21 @@ async function main() {
     });
 }
 
-function setupTabLists() {
+function setupTabLists(filters) {
+    // Closing a panel filled by a toggle selection also deselects it, so clicking the same
+    // country / age group again selects it (and reopens the panel) instead of deselecting it
     const visualizations = [
         ["beeswarm", "Beeswarm tabs"],
         ["stacked", "Stacked area chart tabs"],
-        ["choropleth", "Choropleth tabs"],
+        ["choropleth", "Choropleth tabs", () => filters.set({ country: "" })],
         ["parallel", "Parallel coordinates tabs"],
-        ["sunburst", "Sunburst tabs"],
+        ["sunburst", "Sunburst tabs", () => filters.set({ ageGroup: "" })],
         ["network", "Network tabs"]
     ];
-    return Object.fromEntries(visualizations.map(([key, label]) => {
+    return Object.fromEntries(visualizations.map(([key, label, onClose]) => {
         const containerId = `tabs-${key}`;
         const container = document.getElementById(containerId);
-        return [key, createTabList(container, { label })];
+        return [key, createTabList(container, { label, onClose })];
     }));
 }
 
@@ -267,6 +277,17 @@ function showTitle(tabList, title) {
     }]);
 }
 
+// stackedTitles ignore the year filter, so the range is applied here
+function showYearRange(tabList, data, yearFrom, yearTo) {
+    const titles = data.filter((title) =>
+        (yearFrom == null || title.release_year >= yearFrom)
+        && (yearTo == null || title.release_year <= yearTo));
+    showTypeTabs(tabList, titles, {
+        heading: yearFrom === yearTo ? `Released in ${yearFrom}` : `Released ${yearFrom}–${yearTo}`,
+        description: `${titles.length} title${titles.length === 1 ? "" : "s"}`
+    });
+}
+
 function showYear(tabList, data, year) {
     const titles = data.filter((title) => Number(title.release_year) === year);
     showTypeTabs(tabList, titles, {
@@ -318,7 +339,10 @@ function showTypeTabs(tabList, titles, options = {}) {
 }
 
 function showCatalogueSelection(tabList, selection) {
-    if (!selection) return;
+    if (!selection) {
+        tabList.setTabs([]);
+        return;
+    }
     tabList.setTabs([{
         id: "catalogue-titles",
         label: "Titles",

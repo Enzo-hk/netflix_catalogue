@@ -38,6 +38,22 @@
   border-bottom-color: #e50914;
 }
 
+.tab-list__close {
+  margin-left: auto;
+  border: 0;
+  padding: 10px 12px;
+  background: transparent;
+  color: #b3b3b3;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tab-list__close:hover,
+.tab-list__close:focus-visible {
+  color: #e50914;
+}
+
 .tab-list__panel {
   max-height: 540px;
   overflow-y: auto;
