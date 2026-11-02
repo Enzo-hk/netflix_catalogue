@@ -15,7 +15,7 @@ import { createTabList } from "./components/tab-list.js";
 import { createNetworkExplorer } from "./components/network-explorer.js";
 
 async function main() {
-    const [data, network] = await Promise.all([loadNetflixData(), loadPersonNetwork()]);
+    let [data, network] = await Promise.all([loadNetflixData(), loadPersonNetwork()]);
     setupVisualizationToggles();
     console.log("Data loaded:", data);
 
