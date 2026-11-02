@@ -1,7 +1,9 @@
 // Example of how we could use the other files to organize the code (this is just an example,
 // you can change it if you want):
 
-import { loadNetflixData, loadPersonNetwork } from "./data/loadData.js";
+import { loadNetflixData, loadPersonNetwork, importCatalogue } from "./data/loadData.js";
+import { mergeTitles } from "./data/pipeline.js";
+import { createDatasetPanel } from "./components/dataset-panel.js";
 import { createBeeswarm } from "./visualizations/beeswarm.js";
 import { createStackedAreaChart } from "./visualizations/stacked-area-chart.js";
 import { createChoropleth } from "./visualizations/choropleth.js";
@@ -77,13 +79,13 @@ async function main() {
                 onSelectYears: (yearFrom, yearTo) => filters.set({ yearFrom, yearTo }),
                 selectedType: current.type,
                 onSelectType: setType,
-                onSelectYear: (year) => showYear(tabLists.stacked, data, year),
+                onSelectYear: (year) => showYear(tabLists.stacked, stackedTitles, year),
             }),
             choropleth: () => createChoropleth(mapTitles, {
                 selectedCountry: current.country,
                 onSelectCountry: (country) => {
                     filters.set({ country });
-                    showCountry(tabLists.choropleth, data, country);
+                    showCountry(tabLists.choropleth, mapTitles, country);
                 },
             }),
             parallel: () => createParallelCoordinates("#parallel-coordinates", titles, {
@@ -104,6 +106,39 @@ async function main() {
 
     renderViews(filters.get());
     filters.on("views", renderViews);
+
+    // Change of dataset: the imported CSV goes through the data pipeline (src/data/pipeline.js),
+    // then the filters are reset and every view is redrawn with the new titles.
+    const DEFAULT_NAME = "Netflix (default)";
+    let datasetName = DEFAULT_NAME;
+
+    function setData(titles, name) {
+        data = titles;
+        datasetName = name;
+        createFilterPanel("#filter-panel", data, filters); // its menus (countries, genres, years) come from the data
+        Object.values(tabLists).forEach((tabList) => tabList.setTabs([]));
+        filters.reset(); // -> renderViews with the new data
+    }
+
+    createDatasetPanel("#dataset-panel", {
+        name: DEFAULT_NAME,
+        count: data.length,
+        onImport: async (file, mode) => {
+            const { titles, report } = await importCatalogue(file);
+            if (!titles.length) throw new Error("no valid title in this file");
+            if (mode === "update") {
+                const { titles: merged, added, updated } = mergeTitles(data, titles);
+                setData(merged, `${datasetName} + ${file.name}`);
+                return { name: datasetName, count: merged.length, report, added, updated };
+            }
+            setData(titles, file.name);
+            return { name: datasetName, count: titles.length, report };
+        },
+        onReset: () => {
+            setData(defaultData, DEFAULT_NAME);
+            return { name: DEFAULT_NAME, count: data.length };
+        },
+    });
 }
 
 function setupTabLists() {
@@ -247,11 +282,14 @@ function showTypeTabs(tabList, titles, options = {}) {
     tabList.setTabs(["Movie", "TV Show"].map((type) => ({
         id: type.toLowerCase().replace(" ", "-"),
         label: type === "Movie" ? "Movie" : "TV Show",
-        render: (panel) => renderTitleList(panel, titles.filter((title) => title.type === type), {
-            ...options,
-            heading: options.heading ?? type,
-            description: options.description ?? ""
-        })
+        render: (panel) => {
+            const typeTitles = titles.filter((title) => title.type === type);
+            renderTitleList(panel, typeTitles, {
+                ...options,
+                heading: options.heading ?? type,
+                description: `${typeTitles.length} titre(s)`
+            });
+        }
     })));
 }
 
