@@ -74,8 +74,8 @@ netflix_catalogue/
 
 ## Data preprocessing
 
-`npm run dev` first runs `scripts/preprocess.js` automatically (you can also run it alone with `npm run preprocess`).
-It turns the raw Kaggle CSV files of `public/data/raw/` into one clean data table, `public/data/preprocessed/titles.json` (1 row per title), loaded in the app with `loadNetflixData()` from `src/data/loadData.js`.
+`npm run dev` first runs the preprocessing pipeline automatically (you can also run it alone with `npm run preprocess`).
+It turns the raw Kaggle CSV files of `public/data/raw/` into one clean data table, `public/data/preprocessed/titles.json` (1 row per title), then derives `public/data/preprocessed/network.json` from that processed dataset. The title table is loaded in the app with `loadNetflixData()` from `src/data/loadData.js`.
 
 The pipeline itself is in `src/data/pipeline.js`: the same code runs in Node (default dataset) and in the browser (imported dataset, see below).
 
@@ -88,6 +88,7 @@ The pipeline itself is in `src/data/pipeline.js`: the same code runs in Node (de
 The pipeline report (rejected rows, join match rates, category counts) is written to `public/data/preprocessed/summary.json`.
 Filtering and aggregation are done in the browser (e.g. `d3.rollup`) so that every view reacts to the shared filters.
 
+The collaboration network JSON contains unique actor/director people and aggregated actor–director and actor–actor links. Each link records its shared title IDs and collaboration weight. Missing cast or director data contributes no links and does not remove a title from `titles.json`. The network view loads this file once, searches the full set of people, and displays only the selected person’s depth-1 neighborhood (their direct collaborators); shared filters restrict the titles contributing to visible links. To keep dense neighborhoods responsive, it targets at most 400 people and 2,000 links, preserving all direct collaborators and reporting any omitted links if necessary. `npm run build` also runs preprocessing so the generated JSON is available to Vite in production output.
 ## Change the dataset
 
 The **Dataset** panel at the top of the page lets the user load another CSV in the Kaggle Netflix format. The file goes through the same pipeline (validate, clean, join IMDb, derive, pre-classify), then the filters are reset and every view is redrawn.

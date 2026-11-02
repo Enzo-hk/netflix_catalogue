@@ -1,0 +1,171 @@
+.network-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+  color: #e5e5e5;
+}
+
+.network-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 0;
+  color: #b3b3b3;
+  font-size: 13px;
+}
+
+.network-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.network-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.network-legend__actor {
+  background: #4b9de0;
+}
+
+.network-legend__director {
+  background: #f4a261;
+}
+
+.network-legend__selected {
+  background: #f5c518;
+}
+
+.network-controls label {
+  font-weight: 600;
+}
+
+.network-controls input {
+  min-width: min(320px, 100%);
+  padding: 8px 10px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font: inherit;
+}
+
+.network-controls button {
+  padding: 8px 12px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #242424;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.network-controls button:hover:not(:disabled) {
+  border-color: #e50914;
+}
+
+.network-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+#network-status {
+  flex-basis: 100%;
+  min-height: 1.4em;
+  color: #b3b3b3;
+  font-size: 13px;
+}
+
+.network-chart {
+  overflow: hidden;
+  padding: 8px;
+}
+
+#person-network {
+  width: 100%;
+  height: min(70vh, 680px);
+  min-height: 420px;
+  touch-action: none;
+}
+
+.person-network__link {
+  stroke: #a7adb7;
+  transition: stroke-opacity 120ms ease;
+}
+
+.person-network__link.is-dimmed {
+  stroke-opacity: 0.06;
+}
+
+.person-network__node {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 120ms ease;
+}
+
+.person-network__node.is-dimmed {
+  opacity: 0.16;
+}
+
+.person-network__node circle {
+  stroke: #181818;
+  transition: stroke-width 120ms ease;
+}
+
+.person-network__node:hover circle,
+.person-network__node:focus-visible circle {
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.person-network__node.is-selected circle {
+  stroke: #f5c518;
+  stroke-width: 4px;
+}
+
+.person-network__label {
+  display: none;
+  fill: #f4f4f4;
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: #181818;
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.person-network__label.is-visible,
+.person-network__label.is-hovered {
+  display: block;
+}
+
+.person-network-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  gap: 2px;
+  max-width: 240px;
+  padding: 8px 11px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: rgba(24, 24, 24, 0.96);
+  color: #eee;
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+.person-network-tooltip strong {
+  color: #fff;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  #person-network {
+    min-height: 360px;
+  }
+}

@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/src/styles/title-card.css">
 <link rel="stylesheet" href="/src/styles/filters.css">
   <link rel="stylesheet" href="/src/styles/tab-list.css">
+<link rel="stylesheet" href="/src/styles/network.css">
   <!-- you can add other stylesheets here if you want -->
 </head>
 
@@ -46,6 +47,10 @@
       <label class="toggle-label">
         <input type="checkbox" id="toggle-sunburst" checked>
         Sunburst
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-network" checked>
+        Collaboration Network
       </label>
 
     </div>
@@ -118,6 +123,28 @@
         </div>
         <div id="tabs-sunburst"></div>
       </div>
+    </section>
+    <section class="visualization" id="section-network">
+      <h2>Actor–Director Collaboration Network</h2>
+      <p class="view-hint">Search for a person to explore their direct collaborators. Click a node to recenter; use <strong>Back</strong> to return. Shared catalogue filters apply to this network.</p>
+      <div class="network-legend" aria-label="Network node legend">
+        <span><i class="network-legend__actor"></i>Actor</span>
+        <span><i class="network-legend__director"></i>Director</span>
+        <span><i class="network-legend__selected"></i>Selected person</span>
+      </div>
+      <div class="network-controls">
+        <label for="network-person-search">Find an actor or director</label>
+        <input id="network-person-search" type="search" list="network-person-suggestions"
+          placeholder="Start typing a name..." autocomplete="off">
+        <datalist id="network-person-suggestions"></datalist>
+        <button id="network-search-button" type="button">Explore</button>
+        <button id="network-back-button" type="button" disabled>Back</button>
+        <output id="network-status" aria-live="polite"></output>
+      </div>
+      <div class="chart-container network-chart">
+        <svg id="person-network" role="group" aria-label="Interactive actor and director collaboration network"></svg>
+      </div>
+      <div id="person-network-tooltip" class="person-network-tooltip" role="status"></div>
     </section>
 
 

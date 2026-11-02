@@ -10,6 +10,10 @@ export async function loadNetflixData() {
     return d3.json("/data/preprocessed/titles.json");
 }
 
+export async function loadPersonNetwork() {
+    return d3.json("/data/preprocessed/network.json");
+}
+
 // The IMDb datasets used by the join step, loaded once when the first file is imported
 let externalData;
 function loadExternalData() {
