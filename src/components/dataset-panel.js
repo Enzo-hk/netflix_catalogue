@@ -33,8 +33,8 @@ export function createDatasetPanel(container, { name, count, onImport, onReset }
         .text(label)
         .on("click", onClick);
 
-    button("Replace dataset…", () => { mode = "replace"; fileInput.node().click(); });
-    button("Add update…", () => { mode = "update"; fileInput.node().click(); });
+    button("Replace dataset", () => { mode = "replace"; fileInput.node().click(); });
+    button("Add update", () => { mode = "update"; fileInput.node().click(); });
     // always visible, disabled while the default dataset is displayed
     let isDefault = true;
     const reset = button("Back to default", () => {
