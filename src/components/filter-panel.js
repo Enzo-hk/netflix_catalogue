@@ -39,7 +39,7 @@ export function createFilterPanel(container, titles, filters) {
     const chips = summary.append("div").attr("class", "filter-panel__chips");
     summary.append("span").attr("class", "filter-panel__tip")
         .text("Tip: you can also set these filters by clicking in the visualisations below.");
-    summary.append("button").attr("type", "button").attr("class", "filter-panel__reset")
+    const resetButton = summary.append("button").attr("type", "button").attr("class", "filter-panel__reset")
         .text("Reset filters")
         .on("click", () => filters.reset());
 
@@ -55,8 +55,11 @@ export function createFilterPanel(container, titles, filters) {
         const matching = applyFilters(titles, current).length;
         count.text(`Showing ${formatCount(matching)} of ${formatCount(titles.length)} titles`);
 
+        const active = describeFilters(current);
+        resetButton.property("disabled", active.length === 0);
+
         chips.selectAll("button")
-            .data(describeFilters(current), (d) => d.keys.join())
+            .data(active, (d) => d.keys.join())
             .join("button")
             .attr("type", "button")
             .attr("class", "filter-panel__chip")

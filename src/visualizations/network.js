@@ -1,9 +1,9 @@
 import * as d3 from "d3";
 
 const COLORS = {
-    actor: "#4b9de0",
-    director: "#f4a261",
-    selected: "#f5c518",
+    actor: "#e50914",
+    director: "#ff8a8f",
+    selected: "#ffffff",
 };
 
 export function createPersonNetwork(selector, onSelect) {

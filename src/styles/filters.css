@@ -189,3 +189,10 @@
   border-color: #e50914;
   color: #e50914;
 }
+
+/* No filter set: nothing to reset */
+.filter-panel__reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}

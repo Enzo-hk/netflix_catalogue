@@ -29,15 +29,16 @@
 }
 
 .network-legend__actor {
-  background: #4b9de0;
+  background: #e50914;
 }
 
 .network-legend__director {
-  background: #f4a261;
+  background: #ff8a8f;
 }
 
 .network-legend__selected {
-  background: #f5c518;
+  background: transparent;
+  box-shadow: inset 0 0 0 3px #ffffff;
 }
 
 .network-controls label {
@@ -123,7 +124,7 @@
 }
 
 .person-network__node.is-selected circle {
-  stroke: #f5c518;
+  stroke: #ffffff;
   stroke-width: 4px;
 }
 
