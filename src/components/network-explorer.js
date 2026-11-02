@@ -18,10 +18,15 @@ export function createNetworkExplorer(network, titles, filters) {
     const status = document.getElementById("network-status");
     const people = [...network.nodes].sort((a, b) => a.name.localeCompare(b.name));
     const peopleByName = new Map(people.map((person) => [normalizeName(person.name), person]));
+    const defaultPerson = peopleByName.get(normalizeName("Leonardo DiCaprio"));
+    if (!defaultPerson) {
+        throw new Error("Leonardo DiCaprio was not found in the collaboration network.");
+    }
     const graph = createPersonNetwork("#person-network", selectFromGraph);
     const history = [];
-    let selectedPerson = null;
+    let selectedPerson = defaultPerson;
     let suggestionTimer;
+    input.value = defaultPerson.name;
 
     function render() {
         if (!selectedPerson) {
