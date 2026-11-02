@@ -201,13 +201,13 @@ function addHoverEffect(g, formattedData, xScale, width, height, { yearRange, on
                 .style("opacity", 1);
 
             // Mettre à jour les textes
-            tooltipTextYear.text(`Année : ${d.year}`);
+            tooltipTextYear.text(`Year: ${d.year}`);
             let total = d.MOVIE + d.SHOW;
             let pctMovie = total > 0 ? ((d.MOVIE / total) * 100).toFixed(1) : 0;
             let pctShow = total > 0 ? ((d.SHOW / total) * 100).toFixed(1) : 0;
 
-            tooltipTextMovies.text(`Films : ${pctMovie}% (${d.MOVIE})`);
-            tooltipTextShows.text(`Séries : ${pctShow}% (${d.SHOW})`);
+            tooltipTextMovies.text(`Movies: ${pctMovie}% (${d.MOVIE})`);
+            tooltipTextShows.text(`TV shows: ${pctShow}% (${d.SHOW})`);
 
             // Repositionnement dynamique
             const tooltipX = posX > width - 130 ? posX - 135 : posX + 10;
