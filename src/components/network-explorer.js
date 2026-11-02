@@ -1,3 +1,4 @@
+import * as d3 from "d3";
 import { applyFilters } from "../data/filters.js";
 import { extractPersonNeighborhood } from "../data/person-network.js";
 import { createPersonNetwork } from "../visualizations/network.js";
@@ -10,28 +11,48 @@ function normalizeName(name) {
         .toLowerCase();
 }
 
-export function createNetworkExplorer(network, titles, filters) {
+const DEFAULT_PERSON_NAME = "Leonardo DiCaprio";
+
+// onPersonChange(person, filteredTitles) is called after every redraw; person is null when nobody is selected
+export function createNetworkExplorer(network, titles, filters, { onPersonChange } = {}) {
     const input = document.getElementById("network-person-search");
     const suggestions = document.getElementById("network-person-suggestions");
     const searchButton = document.getElementById("network-search-button");
     const backButton = document.getElementById("network-back-button");
     const status = document.getElementById("network-status");
-    const people = [...network.nodes].sort((a, b) => a.name.localeCompare(b.name));
-    const peopleByName = new Map(people.map((person) => [normalizeName(person.name), person]));
-    const defaultPerson = peopleByName.get(normalizeName("Leonardo DiCaprio"));
-    if (!defaultPerson) {
-        throw new Error("Leonardo DiCaprio was not found in the collaboration network.");
-    }
     const graph = createPersonNetwork("#person-network", selectFromGraph);
     const history = [];
-    let selectedPerson = defaultPerson;
+    let people;
+    let peopleByName;
+    let selectedPerson;
     let suggestionTimer;
-    input.value = defaultPerson.name;
+    useData(network, titles);
+
+    // Swaps in a new network/title table (e.g. after a dataset import). Does not redraw by itself.
+    function useData(nextNetwork, nextTitles) {
+        network = nextNetwork;
+        titles = nextTitles;
+        people = [...network.nodes].sort((a, b) => a.name.localeCompare(b.name));
+        peopleByName = new Map(people.map((person) => [normalizeName(person.name), person]));
+
+        // Node ids are rebuilt with the network, so keep the selection by name; otherwise fall back
+        // to the default person, then to the person with the most titles in this dataset.
+        const previousName = selectedPerson?.name;
+        selectedPerson = (previousName && peopleByName.get(normalizeName(previousName)))
+            ?? peopleByName.get(normalizeName(DEFAULT_PERSON_NAME))
+            ?? d3.greatest(people, (person) => person.titleCount)
+            ?? null;
+        history.length = 0;
+        backButton.disabled = true;
+        input.value = selectedPerson?.name ?? "";
+        suggestions.replaceChildren();
+    }
 
     function render() {
         if (!selectedPerson) {
             graph.clear();
             status.textContent = "Search for an actor or director to explore their direct collaborations.";
+            onPersonChange?.(null, []);
             return;
         }
 
@@ -43,6 +64,8 @@ export function createNetworkExplorer(network, titles, filters) {
             1
         );
         graph.update(neighborhood, selectedPerson.id);
+        // Let the side panel list this person's titles (same filtered subset as the graph)
+        onPersonChange?.(selectedPerson, filteredTitles);
         const directConnections = neighborhood.edges.filter((edge) =>
             edge.source === selectedPerson.id || edge.target === selectedPerson.id).length;
         const capNotice = neighborhood.truncatedNodes || neighborhood.truncatedEdges
@@ -108,6 +131,8 @@ export function createNetworkExplorer(network, titles, filters) {
     render();
 
     return {
+        // The caller redraws afterwards (main.js resets the filters, which triggers render)
+        setData: useData,
         destroy() {
             clearTimeout(suggestionTimer);
             graph.destroy();

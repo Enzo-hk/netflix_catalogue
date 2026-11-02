@@ -13,6 +13,7 @@ import { applyFilters, createFilterState } from "./data/filters.js";
 import { createFilterPanel } from "./components/filter-panel.js";
 import { createTabList } from "./components/tab-list.js";
 import { createNetworkExplorer } from "./components/network-explorer.js";
+import { buildPersonNetwork, normalisePersonName } from "./data/person-network.js";
 
 async function main() {
     const [defaultData, network] = await Promise.all([loadNetflixData(), loadPersonNetwork()]);
@@ -23,8 +24,10 @@ async function main() {
     // Coordinated views: one shared filter state, every view shows the same subset of titles
     const filters = createFilterState();
     createFilterPanel("#filter-panel", data, filters);
-    createNetworkExplorer(network, data, filters);
     const tabLists = setupTabLists();
+    const networkExplorer = createNetworkExplorer(network, data, filters, {
+        onPersonChange: (person, filteredTitles) => showPerson(tabLists.network, person, filteredTitles),
+    });
 
     // Every view can also SET the common filters it shows, and the filters accumulate:
     //   map: country · sunburst: type, genre, age group · stacked chart: years (brush), type (legend)
@@ -116,6 +119,8 @@ async function main() {
     function setData(titles, name) {
         data = titles;
         datasetName = name;
+        // network.json only covers the default catalogue: an imported dataset gets its own network
+        networkExplorer.setData(titles === defaultData ? network : buildPersonNetwork(titles), titles);
         createFilterPanel("#filter-panel", data, filters); // its menus (countries, genres, years) come from the data
         Object.values(tabLists).forEach((tabList) => tabList.setTabs([]));
         filters.reset(); // -> renderViews with the new data
@@ -148,7 +153,8 @@ function setupTabLists() {
         ["stacked", "Stacked area chart tabs"],
         ["choropleth", "Choropleth tabs"],
         ["parallel", "Parallel coordinates tabs"],
-        ["sunburst", "Sunburst tabs"]
+        ["sunburst", "Sunburst tabs"],
+        ["network", "Network tabs"]
     ];
     return Object.fromEntries(visualizations.map(([key, label]) => {
         const containerId = `tabs-${key}`;
@@ -276,6 +282,23 @@ function showCountry(tabList, data, country) {
     showTypeTabs(tabList, titles, {
         heading: country,
         description: `${titles.length} title${titles.length === 1 ? "" : "s"}`
+    });
+}
+
+function showPerson(tabList, person, titles) {
+    if (!person) {
+        tabList.setTabs([]);
+        return;
+    }
+    // Match names the way the network does (accents/spacing ignored), so spelling variants still count
+    const key = normalisePersonName(person.name);
+    const isPerson = (name) => typeof name === "string" && normalisePersonName(name) === key;
+    const personTitles = titles.filter((title) =>
+        (title.directors ?? []).some(isPerson) || (title.cast ?? []).some(isPerson));
+    const role = person.type === "director" ? "Director" : "Actor";
+    showTypeTabs(tabList, personTitles, {
+        heading: person.name,
+        description: `${role} · ${personTitles.length} title${personTitles.length === 1 ? "" : "s"}`
     });
 }
 
