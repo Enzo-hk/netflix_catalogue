@@ -195,13 +195,13 @@ function renderTitleList(panel, titles, {
                 const toggle = document.createElement("button");
                 toggle.type = "button";
                 toggle.className = "tab-list__description-toggle";
-                toggle.textContent = "Afficher plus";
+                toggle.textContent = "Show more";
                 toggle.setAttribute("aria-expanded", "false");
                 toggle.addEventListener("click", () => {
                     const isExpanded = toggle.getAttribute("aria-expanded") === "true";
                     titleDescription.classList.toggle("tab-list__description--collapsed", isExpanded);
                     toggle.setAttribute("aria-expanded", String(!isExpanded));
-                    toggle.textContent = isExpanded ? "Afficher plus" : "Réduire";
+                    toggle.textContent = isExpanded ? "Show more" : "Show less";
                 });
                 item.append(toggle);
             }
@@ -212,12 +212,12 @@ function renderTitleList(panel, titles, {
 }
 
 function formatTitleMetadata(title) {
-    const year = title.release_year ?? "Année inconnue";
+    const year = title.release_year ?? "Unknown year";
     const duration = title.duration_minutes
         ? `${title.duration_minutes} min`
         : title.seasons
-            ? `${title.seasons} saison${title.seasons > 1 ? "s" : ""}`
-            : "Durée inconnue";
+            ? `${title.seasons} season${title.seasons > 1 ? "s" : ""}`
+            : "Unknown duration";
     const score = title.imdb_score != null
         ? `IMDb ${Number(title.imdb_score).toFixed(1)}`
         : "IMDb N/A";
@@ -235,11 +235,11 @@ function showTitle(tabList, title) {
             metadata.className = "tab-list__meta";
             metadata.textContent = formatTitleMetadata(title);
             const description = document.createElement("p");
-            description.textContent = title.description || "Description indisponible.";
+            description.textContent = title.description || "No description available.";
             const toggle = document.createElement("button");
             toggle.type = "button";
             toggle.className = "tab-list__description-toggle";
-            toggle.textContent = "Afficher plus";
+            toggle.textContent = "Show more";
             toggle.setAttribute("aria-expanded", "false");
 
             const descriptionIsLong = description.textContent.length > 180;
@@ -249,7 +249,7 @@ function showTitle(tabList, title) {
                     const isExpanded = toggle.getAttribute("aria-expanded") === "true";
                     description.classList.toggle("tab-list__description--collapsed", isExpanded);
                     toggle.setAttribute("aria-expanded", String(!isExpanded));
-                    toggle.textContent = isExpanded ? "Afficher plus" : "Réduire";
+                    toggle.textContent = isExpanded ? "Show more" : "Show less";
                 });
             } else {
                 toggle.hidden = true;
@@ -263,8 +263,8 @@ function showTitle(tabList, title) {
 function showYear(tabList, data, year) {
     const titles = data.filter((title) => Number(title.release_year) === year);
     showTypeTabs(tabList, titles, {
-        heading: `Sorties de ${year}`,
-        description: `${titles.length} titre(s)`
+        heading: `Released in ${year}`,
+        description: `${titles.length} title${titles.length === 1 ? "" : "s"}`
     });
 }
 
@@ -274,7 +274,7 @@ function showCountry(tabList, data, country) {
     const titles = data.filter((title) => title.countries.includes(sourceCountry));
     showTypeTabs(tabList, titles, {
         heading: country,
-        description: `${titles.length} titre(s)`
+        description: `${titles.length} title${titles.length === 1 ? "" : "s"}`
     });
 }
 
@@ -287,7 +287,7 @@ function showTypeTabs(tabList, titles, options = {}) {
             renderTitleList(panel, typeTitles, {
                 ...options,
                 heading: options.heading ?? type,
-                description: `${typeTitles.length} titre(s)`
+                description: `${typeTitles.length} title${typeTitles.length === 1 ? "" : "s"}`
             });
         }
     })));

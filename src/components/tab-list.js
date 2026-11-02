@@ -13,7 +13,7 @@ export function createTabList(container, { label = "Visualization tabs" } = {}) 
     panel.className = "tab-list__panel";
     panel.setAttribute("role", "tabpanel");
     panel.setAttribute("aria-live", "polite");
-    panel.textContent = "Sélectionnez un élément pour afficher ses détails.";
+    panel.textContent = "Select an element to see its details.";
 
     tabList.append(tabs, panel);
     container.append(tabList);
@@ -23,7 +23,7 @@ export function createTabList(container, { label = "Visualization tabs" } = {}) 
         panel.replaceChildren();
 
         if (!definitions.length) {
-            panel.textContent = "Sélectionnez un élément pour afficher ses détails.";
+            panel.textContent = "Select an element to see its details.";
             return;
         }
 
