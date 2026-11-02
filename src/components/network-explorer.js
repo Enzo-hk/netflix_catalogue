@@ -26,7 +26,7 @@ export function createNetworkExplorer(network, titles, filters) {
     function render() {
         if (!selectedPerson) {
             graph.clear();
-            status.textContent = "Search for an actor or director to explore their two-step network.";
+            status.textContent = "Search for an actor or director to explore their direct collaborations.";
             return;
         }
 
@@ -35,7 +35,7 @@ export function createNetworkExplorer(network, titles, filters) {
             network,
             selectedPerson.id,
             filteredTitles,
-            2
+            1
         );
         graph.update(neighborhood, selectedPerson.id);
         const directConnections = neighborhood.edges.filter((edge) =>
@@ -43,7 +43,7 @@ export function createNetworkExplorer(network, titles, filters) {
         const capNotice = neighborhood.truncatedNodes || neighborhood.truncatedEdges
             ? ` · readability cap: ${neighborhood.truncatedNodes} people and ${neighborhood.truncatedEdges} links omitted`
             : "";
-        status.textContent = `${selectedPerson.name} · ${neighborhood.nodes.length} of ${neighborhood.totalNodes} people · ${directConnections} direct collaborations · depth 2 · ${filteredTitles.length} titles after filters${capNotice}`;
+        status.textContent = `${selectedPerson.name} · ${neighborhood.nodes.length} people · ${directConnections} direct collaborations · depth 1 · ${filteredTitles.length} titles after filters${capNotice}`;
     }
 
     function selectPerson(person, addToHistory = true) {

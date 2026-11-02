@@ -1,5 +1,4 @@
 const networkIndexes = new WeakMap();
-const MAX_VISIBLE_NODES = 400;
 const MAX_VISIBLE_EDGES = 2000;
 
 function getAdjacency(network) {
@@ -21,8 +20,8 @@ function getAdjacency(network) {
     return index;
 }
 
-export function extractPersonNeighborhood(network, centerId, titles, depth = 2) {
-    const maxDepth = Number.isFinite(depth) ? Math.min(2, Math.max(0, Math.floor(depth))) : 2;
+export function extractPersonNeighborhood(network, centerId, titles, depth = 1) {
+    const maxDepth = Number.isFinite(depth) ? Math.min(1, Math.max(0, Math.floor(depth))) : 1;
     const titleIds = new Set(titles.map(({ show_id }) => show_id));
     const { adjacency, nodesById } = getAdjacency(network);
     if (!nodesById.has(centerId)) {
@@ -62,29 +61,7 @@ export function extractPersonNeighborhood(network, centerId, titles, depth = 2) 
         }
     }
 
-    const directIds = [...distance]
-        .filter(([, nodeDepth]) => nodeDepth === 1)
-        .map(([id]) => id);
-    const depthTwoScores = new Map();
-    for (const id of directIds) {
-        for (const edge of adjacency.get(id) ?? []) {
-            const neighbor = edge.source === id ? edge.target : edge.source;
-            if (distance.get(neighbor) !== 2) continue;
-            const weight = activeWeight(edge);
-            if (weight) depthTwoScores.set(neighbor, (depthTwoScores.get(neighbor) ?? 0) + weight);
-        }
-    }
-
-    const maxVisibleNodes = Math.max(MAX_VISIBLE_NODES, directIds.length + 1);
-    const visibleIds = new Set([centerId, ...directIds]);
-    const depthTwoIds = [...depthTwoScores.keys()]
-        .sort((a, b) =>
-            depthTwoScores.get(b) - depthTwoScores.get(a)
-            || nodesById.get(b).titleCount - nodesById.get(a).titleCount
-            || nodesById.get(a).name.localeCompare(nodesById.get(b).name));
-    for (const id of depthTwoIds.slice(0, maxVisibleNodes - visibleIds.size)) {
-        visibleIds.add(id);
-    }
+    const visibleIds = new Set(distance.keys());
 
     const candidateEdges = [];
     const seenEdges = new Set();
@@ -112,7 +89,7 @@ export function extractPersonNeighborhood(network, centerId, titles, depth = 2) 
         edges: visibleEdges,
         totalNodes: distance.size,
         totalEdges: candidateEdges.length,
-        truncatedNodes: distance.size - visibleIds.size,
+        truncatedNodes: 0,
         truncatedEdges: candidateEdges.length - visibleEdges.length,
     };
 }
