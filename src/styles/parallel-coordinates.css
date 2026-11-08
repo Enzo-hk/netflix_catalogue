@@ -1,0 +1,41 @@
+/* Hover card of the parallel coordinates */
+.pc-tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 300px;
+    padding: 14px 18px;
+    background: #1b1e25;
+    border: 1px solid #3a3d46;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.8;
+}
+.pc-tooltip__title { font-size: 18px; font-weight: bold; margin-bottom: 6px; }
+.pc-tooltip__label { color: #9aa0a6; }
+.pc-tooltip__score {
+    color: #f5c518;
+    background: rgba(245, 197, 24, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+/* Texts around the chart */
+.pc-help { font-size: 11px; fill: #666; }
+.pc-counter, .pc-legend-label { font-size: 11px; fill: currentColor; }
+.pc-reset { font-size: 11px; font-weight: bold; fill: #E50914; cursor: pointer; }
+.pc-reset:hover { text-decoration: underline; }
+
+/* Empty message: outline in the panel colour, not white (fixes your photo) */
+.pc-empty { font-size: 14px; font-weight: bold; fill: #e1d7d7;
+  paint-order: stroke; stroke: #181818; stroke-width: 4; pointer-events: none; }
+
+/* Drag band: white so it shows on the dark theme */
+.pc-drag-zone { fill: #fff; fill-opacity: 0.04; }
+.pc-drag-zone.is-active { fill-opacity: 0.12; }
+
+/* Values next to each brush */
+.pc-range-label { font-size: 11px; font-weight: bold; fill: #e1d7d7;
+  paint-order: stroke; stroke: #181818; stroke-width: 3; }
