@@ -81,7 +81,7 @@ export function createChoropleth(data, { selectedCountry = "", onSelectCountry }
 
     // Load external data
     Promise.all([
-        d3.json("public/data/raw/world_countries.geojson")
+        d3.json("/data/raw/world_countries.geojson") // public/ is served at the root (dev and build)
         ]).then(function (loadData) {
             let topo = loadData[0];
             svg.selectAll("*").remove(); // redrawn when the shared filters change
@@ -144,7 +144,6 @@ export function createChoropleth(data, { selectedCountry = "", onSelectCountry }
                 if (!onSelectCountry || !d.total) return;
                 const name = toNetflixCountryName(d.properties.name);
                 onSelectCountry(name === selectedCountry ? "" : name);
-                if (onFilterChange) onFilterChange();
             }
 
             // Draw the choropleth map
