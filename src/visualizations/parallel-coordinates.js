@@ -24,7 +24,7 @@ const OPACITY_DEFAULT = 0.15;
 const OPACITY_SELECTED = 0.6;
 const OPACITY_FADED = 0.02;
 
-// Netflix black for the hovered line and the filter boxes
+// Light grey for the hovered line and the filter boxes
 const HOVER_COLOR = "#e1d7d7";
 
 // Half-width of the draggable zone around each axis, in px
@@ -65,9 +65,13 @@ function formatMoney(value) {
     return value === null || value === undefined ? "no data" : "$" + formatNumber(value);
 }
 
+// Filter boxes kept as values (axis key -> [top value, bottom value]),
+// so they come back when a shared filter redraws the chart
+const savedRanges = new Map();
+
 // Called from main.js
 // Shared filters (coordinated views), optional: selectedType + onSelectType(type) when a legend item is clicked
-export function createParallelCoordinates(svgSelector, data, { selectedType = "", onSelectType ,onFilterChange } = {}) {
+export function createParallelCoordinates(svgSelector, data, { selectedType = "", onSelectType, onFilterChange } = {}) {
 
 
     // 1. Clear the SVG
@@ -174,8 +178,9 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
     const allLinesLayer = makeLayer(OPACITY_DEFAULT);
     const fadedLinesLayer = makeLayer(OPACITY_FADED);
 
-    // Titles passing the filters
     let visibleTitles = rows;
+    // The list on the right is slow to rebuild: only update it when a box is released
+    let listNeedsUpdate = true;
 
     // Redraw: copy a ready layer, then paint only the selected lines
     function drawLines() {
@@ -190,8 +195,13 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
             ctx.drawImage(fadedLinesLayer, 0, 0, width, height);
             paintLines(visibleTitles, OPACITY_SELECTED);
         }
+
         updateFilterInfo();
-        onFilterChange?.(visibleTitles);
+        if (listNeedsUpdate) {
+            listNeedsUpdate = false;
+            // Best score first in the list on the right (task A3), on a copy so the chart's order stays the same
+            onFilterChange?.([...visibleTitles].sort((a, b) => b.imdb_score - a.imdb_score));
+        }
     }
 
     // Layer between the canvas and the axes, used by the hover code
@@ -225,9 +235,7 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
         .attr("x", -DRAG_ZONE)
         .attr("width", DRAG_ZONE * 2)
         .attr("height", plotHeight)
-        .attr("rx", 4)
-        .attr("fill", "#000")
-        .attr("fill-opacity", 0.04);
+        .attr("rx", 4);
 
     // Axis title
     axisGroups.append("text")
@@ -257,11 +265,20 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
         .handleSize(12)  // thicker edges, easier to resize
         .on("start brush end", function (event, axis) {
             const i = AXES.indexOf(axis);
+
             if (event.selection) {
                 selections.set(i, event.selection);
+                const [top, bottom] = event.selection;
+                savedRanges.set(axis.key, [y[axis.key].invert(top), y[axis.key].invert(bottom)]);
             } else {
                 selections.delete(i);
+                savedRanges.delete(axis.key);
             }
+
+            updateRangeLabels(i, event.selection); 
+
+            if (event.type === "end") 
+                listNeedsUpdate = true;  // box released 
             scheduleDraw();
         });
 
@@ -281,31 +298,28 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
     // selectAll, not select: select would overwrite data the brush needs
     brushGroups.selectAll(".overlay")
         .on("pointerenter.zone", function () {
-            d3.select(this.parentNode.parentNode).select(".pc-drag-zone").attr("fill-opacity", 0.12);
+            d3.select(this.parentNode.parentNode).select(".pc-drag-zone").classed("is-active", true);
         })
         .on("pointerleave.zone", function () {
-            d3.select(this.parentNode.parentNode).select(".pc-drag-zone").attr("fill-opacity", 0.04);
+            d3.select(this.parentNode.parentNode).select(".pc-drag-zone").classed("is-active", false);
         });
 
     // Range values shown next to each box
     const rangeLabels = axisGroups.append("g")
         .style("pointer-events", "none")
         .style("display", "none");
-    rangeLabels.append("text").attr("class", "range-top");
-    rangeLabels.append("text").attr("class", "range-bottom");
+    rangeLabels.append("text").attr("class", "pc-range-label range-top");
+    rangeLabels.append("text").attr("class", "pc-range-label range-bottom");
     rangeLabels.selectAll("text")
-        .attr("x", DRAG_ZONE + 4)
-        .style("font-size", "11px")
-        .style("font-weight", "bold")
-        .style("fill", HOVER_COLOR)
-        .style("paint-order", "stroke")  // white outline, readable over lines
-        .style("stroke", "#fff")
-        .style("stroke-width", 3);
+        .attr("x", DRAG_ZONE + 4);
 
     // Pixel -> readable data value on an axis
     function valueAt(axis, pixel) {
         const value = y[axis.key].invert(pixel);
-        return axis.log ? formatNumber(value) : String(Math.round(value * 10) / 10);
+        if (axis.log) 
+            return formatNumber(value);
+        // IMDb score keeps 1 decimal, the other axes are whole numbers
+        return axis.key === "imdb_score" ? String(Math.round(value * 10) / 10) : String(Math.round(value));
     }
 
     // Update the two labels of one axis
@@ -373,24 +387,10 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
     d3.selectAll(".pc-tooltip").remove();  // old card if the chart is redrawn
     const tooltip = d3.select("body").append("div")
         .attr("class", "pc-tooltip")
-        .style("position", "fixed")
-        .style("pointer-events", "none")
-        .style("display", "none")
-        .style("z-index", 1000)
-        .style("max-width", "300px")
-        .style("padding", "14px 18px")
-        .style("background", "#1b1e25")
-        .style("border", "1px solid #3a3d46")
-        .style("border-radius", "12px")
-        .style("box-shadow", "0 8px 24px rgba(0, 0, 0, 0.5)")
-        .style("color", "#fff")
-        .style("font-size", "14px")
-        .style("line-height", "1.8");
+        .style("display", "none");
 
     const tooltipTitle = tooltip.append("div")
-        .style("font-size", "18px")
-        .style("font-weight", "bold")
-        .style("margin-bottom", "6px");
+        .attr("class", "pc-tooltip__title");
 
     // "Film, released 2019"
     const tooltipType = tooltip.append("div");
@@ -398,14 +398,10 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
     // IMDb score in a yellow badge, then the votes
     const scoreRow = tooltip.append("div");
     scoreRow.append("span")
-        .style("color", "#9aa0a6")
+        .attr("class", "pc-tooltip__label")
         .text("IMDb: ");
     const tooltipScore = scoreRow.append("span")
-        .style("color", "#f5c518")
-        .style("background", "rgba(245, 197, 24, 0.15)")
-        .style("padding", "2px 8px")
-        .style("border-radius", "6px")
-        .style("font-weight", "bold");
+        .attr("class", "pc-tooltip__score");
     const tooltipVotes = scoreRow.append("span");
 
     const tooltipRows = tooltip.append("div");
@@ -442,14 +438,15 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
         const rows = [
             ["Budget", formatMoney(d.budget)],
             ["Revenue", formatMoney(d.revenue)],
-            ["Duration", d.duration_minutes === null ? "no data" : Math.round(d.duration_minutes) + " min"],
+            ["Duration", d.duration_minutes != null ? Math.round(d.duration_minutes) + " min"
+                : d.seasons ? `${d.seasons} season${d.seasons > 1 ? "s" : ""}` : "no data"],
             ["Cast size", d.cast_size || "no data"],
             ["Countries", d.production_country_count || "no data"],
         ];
         tooltipRows.selectAll("div")
             .data(rows)
             .join("div")
-            .html(([label, value]) => `<span style="color: #9aa0a6">${label}:</span> ${value}`);
+            .html(([label, value]) => `<span class="pc-tooltip__label">${label}:</span> ${value}`);
 
         // Show it first, then measure it
         tooltip.style("display", null);
@@ -492,45 +489,31 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
     // 10. Help text, counter, reset button, empty message
     g.append("text")
         .attr("y", -52)
-        .style("font-size", "11px")
-        .style("fill", "#666")
+        .attr("class", "pc-help")
         .text("Drag on an axis to filter. Drag the box to move it, or its edges to resize.");
 
     const counter = g.append("text")
-        .attr("y", height + 28)
-        .style("font-size", "11px")
-        .style("fill", "currentColor");
+        .attr("class", "pc-counter")
+        .attr("y", height + 28);
 
     const resetButton = g.append("text")
         .attr("x", width)
         .attr("y", height + 28)
         .attr("text-anchor", "end")
-        .style("font-size", "11px")
-        .style("font-weight", "bold")
-        .style("fill", "#E50914")
-        .style("cursor", "pointer")
+        .attr("class", "pc-reset")
         .text("Reset all filters")
         .on("click", () => {
             // Removing each box clears its filter
             brushGroups.each(function () {
                 d3.select(this).call(brush.move, null);
             });
-        })
-        // Underline on mouse over, like a link
-        .on("pointerenter", () => resetButton.style("text-decoration", "underline"))
-        .on("pointerleave", () => resetButton.style("text-decoration", "none"));
+        });
 
     const emptyMessage = g.append("text")
         .attr("x", width / 2)
         .attr("y", plotHeight / 2)
         .attr("text-anchor", "middle")
-        .style("font-size", "14px")
-        .style("font-weight", "bold")
-        .style("fill", HOVER_COLOR)
-        .style("paint-order", "stroke")
-        .style("stroke", "#fff")
-        .style("stroke-width", 4)
-        .style("pointer-events", "none")
+        .attr("class", "pc-empty")
         .text("No titles match all filters. Widen a box or reset.");
 
     // Runs after every redraw
@@ -567,9 +550,17 @@ export function createParallelCoordinates(svgSelector, data, { selectedType = ""
         item.append("text")
             .attr("x", 16)
             .attr("y", 10)
-            .style("font-size", "11px")
-            .style("fill", "currentColor")
+            .attr("class", "pc-legend-label")
             .text(type === "Movie" ? "Movie" : "TV Show");
+    });
+
+    // Put back the boxes from before the redraw
+    brushGroups.each(function (axis) {
+        const range = savedRanges.get(axis.key);
+        if (!range) return;
+        const top = Math.max(0, y[axis.key](range[0]));
+        const bottom = Math.min(plotHeight, y[axis.key](range[1]));
+        if (bottom - top > 1) d3.select(this).call(brush.move, [top, bottom]);
     });
 
     // First draw
